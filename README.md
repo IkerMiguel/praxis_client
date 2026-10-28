@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Praxis Client
 
-## Getting Started
+Frontend de Praxis (Next.js). Consume un backend externo;
 
-First, run the development server:
+## Stack
+
+- Next.js 16 + React 19 + TypeScript
+- Tailwind CSS
+- Playwright (e2e)
+
+## Setup local
 
 ```bash
+npm install
+cp .env.example .env
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Variables de entorno
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Copia `.env.example` → `.env` (no se sube a Git).
 
-## Learn More
+| Variable | Uso |
+|----------|-----|
+| `NEXT_PUBLIC_APP_URL` | URL pública del front |
+| `NEXT_PUBLIC_API_URL` | URL del backend externo |
+| `PLAYWRIGHT_BASE_URL` | Base URL para e2e (local/CI) |
 
-To learn more about Next.js, take a look at the following resources:
+- **Local:** valores en `.env` (p. ej. `http://localhost:3000` / `http://localhost:8080`)
+- **Producción:** mismas keys en Vercel → Settings → Environment Variables, luego Redeploy
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+En código:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `src/lib/env.ts` — lectura de vars
+- `src/lib/api.ts` — `apiFetch()` hacia el backend
 
-## Deploy on Vercel
+## Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Desarrollo local |
+| `npm run build` | Build de producción |
+| `npm run start` | Servir build local |
+| `npm run lint` | ESLint |
+| `npm run test:e2e` | Playwright |
+| `npm run test:e2e:ui` | Playwright con UI |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Estructura relevante
+
+```
+src/app/          # Rutas y UI (App Router)
+src/lib/env.ts    # Variables públicas
+src/lib/api.ts    # Cliente HTTP al API externo
+tests/            # E2E Playwright
+.github/workflows # CI (lint + e2e)
+```
