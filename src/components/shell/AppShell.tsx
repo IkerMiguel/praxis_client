@@ -12,6 +12,7 @@ import GlobalSearch from './GlobalSearch';
 import ModuleBar from './ModuleBar';
 import NotificationBell from './NotificationBell';
 import UserMenu from './UserMenu';
+import Toaster from '@/components/ui/Toaster';
 
 function ConnectionChip() {
   const online = useOnline();
@@ -97,6 +98,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
         >
           {children}
         </motion.main>
+        <Toaster />
       </div>
     </AuthGuard>
   );
