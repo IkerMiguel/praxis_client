@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={montserrat.className}>
+    <html lang="es" className={`${montserrat.className} ${montserrat.variable}`}>
       <body className="antialiased bg-[#0D111D] text-slate-100 font-sans">
         <GlobalLoader />
         <SessionProvider>{children}</SessionProvider>
