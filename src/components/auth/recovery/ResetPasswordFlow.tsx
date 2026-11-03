@@ -192,7 +192,7 @@ export default function ResetPasswordFlow({ token }: { token: string }) {
                 whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#111827] px-4 py-4 text-base font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-800 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1CA3E9]"
               >
-                {saving ? <PraxisLoader size={24} label={null} /> : 'Guardar nueva contraseña'}
+                {saving ? 'Guardando…' : 'Guardar nueva contraseña'}
               </motion.button>
             </form>
           </motion.div>

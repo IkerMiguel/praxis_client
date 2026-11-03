@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { passwordRecoveryService } from '@/services/passwordRecoveryService';
 import { apiErrorMessage, apiFieldErrors } from '@/lib/apiError';
-import PraxisLoader from '@/components/ui/PraxisLoader';
 import RecoveryShell from './RecoveryShell';
 import FormAlert from './FormAlert';
 import MailSentIllustration from './MailSentIllustration';
@@ -161,7 +160,7 @@ export default function RequestRecoveryFlow() {
                 whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#111827] px-4 py-4 text-base font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-800 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1CA3E9]"
               >
-                {loading ? <PraxisLoader size={24} label={null} /> : 'Enviar enlace de recuperación'}
+                {loading ? 'Enviando…' : 'Enviar enlace de recuperación'}
               </motion.button>
             </form>
 
@@ -210,7 +209,7 @@ export default function RequestRecoveryFlow() {
                 className="flex items-center justify-center gap-2 rounded-xl bg-[#111827] px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1CA3E9]"
               >
                 {loading ? (
-                  <PraxisLoader size={22} label={null} />
+                  'Enviando…'
                 ) : cooldown > 0 ? (
                   <span className="tabular-nums">Reenviar en {formatSeconds(cooldown)}</span>
                 ) : (

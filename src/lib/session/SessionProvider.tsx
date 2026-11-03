@@ -12,6 +12,8 @@ interface SessionContextValue {
   profile: Profile | null;
   menu: MenuItem[];
   activeRole: RoleCode | null;
+  /** true cuando el usuario cerró sesión a propósito (no por vencimiento). */
+  signedOut: boolean;
   /** Recupera la sesión desde la cookie de refresh si todavía no hay una en memoria. */
   ensureSession: () => Promise<boolean>;
   /** Guarda la sesión recién iniciada en el login. */
@@ -46,6 +48,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [activeRole, setActiveRole] = useState<RoleCode | null>(null);
+  const [signedOut, setSignedOut] = useState(false);
   const pending = useRef<Promise<boolean> | null>(null);
 
   /** Aplica el rol preferido si el usuario lo tiene; si no, el que indique el backend. */
@@ -90,6 +93,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const startSession = useCallback(
     async (session: SessionResponse) => {
       storeRole(null);
+      setSignedOut(false);
       await hydrate(session.usuario);
     },
     [hydrate],
@@ -106,6 +110,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    setSignedOut(true);
     try {
       await authService.logout();
     } finally {
@@ -130,8 +135,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ status, profile, menu, activeRole, ensureSession, startSession, switchRole, signOut }),
-    [status, profile, menu, activeRole, ensureSession, startSession, switchRole, signOut],
+    () => ({ status, profile, menu, activeRole, signedOut, ensureSession, startSession, switchRole, signOut }),
+    [status, profile, menu, activeRole, signedOut, ensureSession, startSession, switchRole, signOut],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

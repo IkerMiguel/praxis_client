@@ -12,18 +12,23 @@ import { useSession } from './SessionProvider';
 export default function AuthGuard({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { status, ensureSession } = useSession();
+  const { status, signedOut, ensureSession } = useSession();
   const wasAuthenticated = useRef(false);
 
   useEffect(() => {
     if (status === 'idle') void ensureSession();
     if (status === 'authenticated') wasAuthenticated.current = true;
     if (status === 'anonymous') {
+      // Cierre de sesión voluntario: login limpio, sin deep-link ni aviso de sesión vencida.
+      if (signedOut) {
+        router.replace('/auth/login');
+        return;
+      }
       const params = new URLSearchParams({ returnUrl: pathname });
       if (wasAuthenticated.current) params.set('sesion', 'expirada');
       router.replace(`/auth/login?${params.toString()}`);
     }
-  }, [status, ensureSession, pathname, router]);
+  }, [status, signedOut, ensureSession, pathname, router]);
 
   if (status !== 'authenticated') return <FullscreenLoader label="Verificando sesión" />;
 

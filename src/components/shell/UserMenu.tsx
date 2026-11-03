@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { ChevronDown, CircleHelp, LogOut, Mail, Wrench } from 'lucide-react';
 import Popover from '@/components/ui/Popover';
 import FullscreenLoader from '@/components/ui/FullscreenLoader';
@@ -11,7 +10,6 @@ import { useSession } from '@/lib/session/SessionProvider';
 import { initials } from '@/lib/format';
 
 export default function UserMenu() {
-  const router = useRouter();
   const { profile, signOut } = useSession();
   const [open, setOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -21,7 +19,6 @@ export default function UserMenu() {
   const logout = async () => {
     setLeaving(true);
     await signOut().catch(() => undefined);
-    router.replace('/auth/login');
   };
 
   return (

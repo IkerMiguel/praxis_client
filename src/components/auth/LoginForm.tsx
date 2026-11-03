@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { authService } from '@/services/authService';
 import { useSession } from '@/lib/session/SessionProvider';
 import { apiErrorMessage } from '@/lib/apiError';
-import PraxisLoader from '@/components/ui/PraxisLoader';
 
 /** Solo se aceptan rutas internas como deep-link (HU-1.1). */
 function returnUrlFromLocation(): string | undefined {
@@ -22,18 +21,15 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setSuccess('');
 
     try {
       const session = await authService.login({ email, password, return_url: returnUrlFromLocation() });
       await startSession(session);
-      setSuccess(`Bienvenido/a, ${session.usuario.nombre}. Abriendo tu espacio de trabajo…`);
       router.replace(session.redirect_to ?? session.usuario.ruta_inicio ?? '/panel');
     } catch (err) {
       setError(apiErrorMessage(err, 'No se pudo iniciar sesión'));
@@ -47,11 +43,6 @@ export default function LoginForm() {
       {error && (
         <div className="p-2.5 text-xs bg-red-50 text-red-600 rounded-lg border border-red-200">
           {error}
-        </div>
-      )}
-      {success && (
-        <div role="status" className="p-2.5 text-xs bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200">
-          {success}
         </div>
       )}
 
@@ -130,7 +121,7 @@ export default function LoginForm() {
         disabled={loading}
         className="w-full py-3.5 px-4 bg-[#111827] hover:bg-slate-800 text-white font-semibold rounded-xl text-sm transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-slate-900/10 disabled:opacity-50"
       >
-        {loading ? <PraxisLoader size={22} /> : 'Iniciar Sesión →'}
+        {loading ? 'Ingresando…' : 'Iniciar Sesión →'}
       </button>
     </form>
   );
