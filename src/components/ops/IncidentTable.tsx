@@ -38,7 +38,8 @@ export default function IncidentTable({ rows, action, showSla = true, showTech =
         </thead>
         <tbody>
           {rows.map((row, index) => {
-            const critical = row.es_riesgo_inmediato || row.prioridad?.codigo === 'CRITICA';
+            const open = !['E15', 'E16', 'E17'].includes(row.estado.codigo);
+            const critical = open && (row.es_riesgo_inmediato || row.prioridad?.codigo === 'CRITICA');
             const unassigned = !row.tecnico_asignado && ['E05'].includes(row.estado.codigo);
             return (
               <motion.tr

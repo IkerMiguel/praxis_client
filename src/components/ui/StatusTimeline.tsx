@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Paperclip } from 'lucide-react';
 import type { EventoHistorial } from '@/types/incident';
@@ -76,13 +77,40 @@ function eventTitle(event: EventoHistorial): string {
 }
 
 /** Línea de tiempo vertical de la trazabilidad, del evento más reciente al más antiguo. */
-export default function StatusTimeline({ events, compact = false }: { events: EventoHistorial[]; compact?: boolean }) {
-  const reduceMotion = useReducedMotion();
-  const ordered = [...events].sort((a, b) => new Date(b.fecha_hora).getTime() - new Date(a.fecha_hora).getTime());
+const FILTERS: { key: string; label: string; test: (e: EventoHistorial) => boolean }[] = [
+  { key: 'todo', label: 'Todo', test: () => true },
+  { key: 'estado', label: 'Estados', test: (e) => Boolean(e.estado_nuevo) },
+  { key: 'evidencias', label: 'Con evidencias', test: (e) => Boolean(e.evidencias?.length) },
+  { key: 'avisos', label: 'Notificaciones', test: (e) => e.tipo_evento === 'COMUNICACION' },
+];
 
-  if (ordered.length === 0) return <p className="text-sm text-slate-500">Sin movimientos registrados.</p>;
+export default function StatusTimeline({ events, compact = false, filterable = false }: { events: EventoHistorial[]; compact?: boolean; filterable?: boolean }) {
+  const reduceMotion = useReducedMotion();
+  const [filter, setFilter] = useState('todo');
+  const test = FILTERS.find((f) => f.key === filter)!.test;
+  const ordered = [...events].filter(test).sort((a, b) => new Date(b.fecha_hora).getTime() - new Date(a.fecha_hora).getTime());
+
+  const chips = filterable && (
+    <div className="mb-4 flex flex-wrap gap-1.5" role="group" aria-label="Filtrar por hito">
+      {FILTERS.map((f) => (
+        <button key={f.key} type="button" aria-pressed={filter === f.key} onClick={() => setFilter(f.key)} className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${filter === f.key ? 'bg-praxis-navy text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+          {f.label} <span className="opacity-60">{events.filter(f.test).length}</span>
+        </button>
+      ))}
+    </div>
+  );
+
+  if (ordered.length === 0)
+    return (
+      <>
+        {chips}
+        <p className="text-sm text-slate-500">Sin movimientos registrados.</p>
+      </>
+    );
 
   return (
+    <>
+    {chips}
     <ol className="relative">
       {ordered.map((event, index) => {
         const tone = TONE_CLASSES[stateTone(event.estado_nuevo?.codigo)];
@@ -116,5 +144,6 @@ export default function StatusTimeline({ events, compact = false }: { events: Ev
         );
       })}
     </ol>
+    </>
   );
 }

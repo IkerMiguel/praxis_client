@@ -341,7 +341,7 @@ function Detail({ inc, history, refresh, loading }: { inc: IncidenciaOperativa; 
         <aside className="space-y-6 xl:sticky xl:top-44">
           <ActionPanel inc={inc} role={activeRole} userId={profile?.id ?? null} onDone={refresh} />
           <Card title="Trazabilidad">
-            {history ? <StatusTimeline events={history} /> : <p className="text-sm text-slate-400">Cargando historial…</p>}
+            {history ? <StatusTimeline events={history} filterable /> : <p className="text-sm text-slate-400">Cargando historial…</p>}
           </Card>
         </aside>
       </div>
