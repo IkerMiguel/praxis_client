@@ -23,7 +23,7 @@ interface IncidentTableProps {
 export default function IncidentTable({ rows, action, showSla = true, showTech = true, showState = true }: IncidentTableProps) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[920px] text-left text-sm">
+      <table className={`w-full text-left text-sm ${showState ? 'min-w-[980px]' : 'min-w-[860px]'}`}>
         <thead>
           <tr className="border-b border-praxis-line text-[11px] font-semibold text-slate-500">
             <th className="px-5 py-3 font-semibold">Código</th>
@@ -49,13 +49,13 @@ export default function IncidentTable({ rows, action, showSla = true, showTech =
                 className={`group border-b border-slate-100 align-middle transition last:border-0 hover:bg-slate-50 ${critical ? 'bg-red-50/40' : unassigned ? 'bg-amber-50/40' : ''}`}
               >
                 <td className="px-5 py-3.5">
-                  <Link href={`/incidencias/${row.id}`} className={`inline-block rounded-lg px-2 py-1 font-mono text-[11px] font-bold leading-tight ${critical ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-700'}`}>
+                  <Link href={`/incidencias/${row.id}`} className={`inline-block whitespace-nowrap rounded-lg px-2 py-1 font-mono text-[11px] font-bold leading-tight ${critical ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-700'}`}>
                     {row.codigo_ticket}
                   </Link>
                   <p className="mt-1 text-[11px] text-slate-400">{formatRelative(row.fecha_registro)}</p>
                 </td>
                 <td className="px-3 py-3.5">
-                  <p className="font-semibold text-slate-900">{row.ubicacion?.espacio?.nombre ?? '—'}</p>
+                  <p className="whitespace-nowrap font-semibold text-slate-900">{row.ubicacion?.espacio?.nombre ?? '—'}</p>
                   <p className="text-xs text-slate-500">{[row.ubicacion?.edificio?.nombre, row.ubicacion?.piso?.nombre].filter(Boolean).join(' · ')}</p>
                 </td>
                 <td className="max-w-[260px] px-3 py-3.5">
