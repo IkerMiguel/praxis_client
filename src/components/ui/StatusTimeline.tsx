@@ -44,6 +44,7 @@ const EVENT_LABELS: Record<string, string> = {
   REPROGRAMACION: 'Intervención reprogramada',
   INICIO_ATENCION: 'Atención iniciada',
   INTERVENCION: 'Intervención registrada',
+  EJECUCION_REGISTRADA: 'Ejecución registrada',
   SUSPENSION: 'Atención suspendida',
   SUSPENDER: 'Atención suspendida',
   REANUDACION: 'Atención reanudada',

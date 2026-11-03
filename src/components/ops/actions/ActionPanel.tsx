@@ -7,13 +7,14 @@ import TriageActions from './TriageActions';
 import PlanningActions from './PlanningActions';
 import TechActions from './TechActions';
 import ResourceActions from './ResourceActions';
+import VerificationActions from './VerificationActions';
 
 /**
  * Panel de acciones de la ficha operativa. Cada épica aporta su bloque y cada bloque decide,
  * según el rol activo y el estado, si se muestra.
  */
 export default function ActionPanel(ctx: ActionContext) {
-  const blocks = [<TriageActions key="triage" {...ctx} />, <PlanningActions key="planning" {...ctx} />, <TechActions key="tech" {...ctx} />, <ResourceActions key="resources" {...ctx} />];
+  const blocks = [<TriageActions key="triage" {...ctx} />, <PlanningActions key="planning" {...ctx} />, <TechActions key="tech" {...ctx} />, <ResourceActions key="resources" {...ctx} />, <VerificationActions key="verification" {...ctx} />];
   const terminal = ['E15', 'E16', 'E17'].includes(ctx.inc.estado.codigo);
 
   return (
