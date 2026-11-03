@@ -1,29 +1,42 @@
 "use client";
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { authService } from '@/services/authService';
+import { useSession } from '@/lib/session/SessionProvider';
+import { apiErrorMessage } from '@/lib/apiError';
 import PraxisLoader from '@/components/ui/PraxisLoader';
 
+/** Solo se aceptan rutas internas como deep-link (HU-1.1). */
+function returnUrlFromLocation(): string | undefined {
+  const value = new URLSearchParams(window.location.search).get('returnUrl');
+  return value && value.startsWith('/') && !value.startsWith('//') ? value : undefined;
+}
+
 export default function LoginForm() {
+  const router = useRouter();
+  const { startSession } = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess('');
 
     try {
-      const response = await authService.login({ email, password });
-      if (response.token) {
-        localStorage.setItem('auth_token', response.token);
-      }
+      const session = await authService.login({ email, password, return_url: returnUrlFromLocation() });
+      await startSession(session);
+      setSuccess(`Bienvenido/a, ${session.usuario.nombre}. Abriendo tu espacio de trabajo…`);
+      router.replace(session.redirect_to ?? session.usuario.ruta_inicio ?? '/panel');
     } catch (err) {
-      setError('Credenciales inválidas o error de conexión');
-    } finally {
+      setError(apiErrorMessage(err, 'No se pudo iniciar sesión'));
       setLoading(false);
     }
   };
@@ -34,6 +47,11 @@ export default function LoginForm() {
       {error && (
         <div className="p-2.5 text-xs bg-red-50 text-red-600 rounded-lg border border-red-200">
           {error}
+        </div>
+      )}
+      {success && (
+        <div role="status" className="p-2.5 text-xs bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200">
+          {success}
         </div>
       )}
 
@@ -102,9 +120,9 @@ export default function LoginForm() {
           />
           Recordar en este equipo
         </label>
-        <a href="#" className="text-slate-900 font-bold hover:underline">
+        <Link href="/recuperar-password" className="text-slate-900 font-bold hover:underline">
           ¿Olvidaste tu contraseña?
-        </a>
+        </Link>
       </div>
 
       <button

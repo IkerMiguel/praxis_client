@@ -1,24 +1,34 @@
-import api from './api';
-import { LoginCredentials, AuthResponse } from '@/types/auth';
+import api, { clearAccessToken, refreshSession, setAccessToken } from './api';
+import type { LoginCredentials, MenuItem, Profile, SessionResponse } from '@/types/auth';
 
 export const authService = {
-  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    // Cuando Laravel tenga la ruta lista, desatentas la petición real:
-    // const { data } = await api.post('/login', credentials);
-    // return data;
+  /** POST /auth/login. `redirect_to` es la ruta de inicio del rol o el deep-link pedido. */
+  login: async (credentials: LoginCredentials): Promise<SessionResponse> => {
+    const { data } = await api.post<SessionResponse>('/auth/login', credentials);
+    setAccessToken(data.access_token);
+    return data;
+  },
 
-    // Simulación (Mock) mientras el backend está en desarrollo:
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          token: 'mock_jwt_token_12345',
-          user: { id: 1, name: 'Usuario Prueba', email: credentials.email },
-        });
-      }, 2000);
-    });
+  /** Recupera la sesión desde la cookie de refresh (por ejemplo, al recargar la página). */
+  restore: (): Promise<SessionResponse> => refreshSession(),
+
+  /** GET /auth/me: perfil según el rol activo. */
+  me: async (): Promise<Profile> => {
+    const { data } = await api.get<{ data: Profile }>('/auth/me');
+    return data.data;
+  },
+
+  /** GET /navegacion/menu: módulos visibles para el rol activo (D09). */
+  menu: async (): Promise<MenuItem[]> => {
+    const { data } = await api.get<{ data: MenuItem[] }>('/navegacion/menu');
+    return data.data;
   },
 
   logout: async (): Promise<void> => {
-    localStorage.removeItem('auth_token');
+    try {
+      await api.post('/auth/logout');
+    } finally {
+      clearAccessToken();
+    }
   },
 };
