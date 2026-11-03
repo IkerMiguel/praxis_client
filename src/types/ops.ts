@@ -25,18 +25,25 @@ interface Persona {
   email?: string;
 }
 
+/** EN_INSPECCION → REGISTRADO (espera decisión) → APROBADO o DEVUELTO. */
+export type EstadoDiagnostico = 'EN_INSPECCION' | 'REGISTRADO' | 'DEVUELTO' | 'APROBADO';
+
 export interface Diagnostico {
   id: number;
-  hallazgos: string;
-  descripcion_problema: string;
+  fecha_inicio_inspeccion: string | null;
+  fecha_fin_diagnostico: string | null;
+  /** true daño confirmado, false descartado en inspección, null aún sin concluir. */
+  incidencia_confirmada: boolean | null;
+  hallazgos: string | null;
+  descripcion_problema: string | null;
   alcance: string | null;
-  intervencion_propuesta: string;
+  intervencion_propuesta: string | null;
+  justificacion_no_confirmada: string | null;
   requiere_recursos: boolean;
   requiere_autorizacion: boolean;
-  dano_confirmado?: boolean;
-  justificacion_descarte?: string | null;
-  es_vigente?: boolean;
-  estado?: string;
+  estado: EstadoDiagnostico;
+  observaciones_devolucion: string | null;
+  fecha_revision: string | null;
   created_at: string;
   tecnico?: Persona;
 }
@@ -60,7 +67,9 @@ export interface SolicitudRecursos {
   justificacion_dictamen: string | null;
   costo_total_estimado: number | null;
   detalles: DetalleRecurso[];
-  seguimientos?: { id: number; comentario: string; created_at: string; usuario?: Persona }[];
+  seguimientos?: { id: number; comentario_seguimiento: string; created_at: string; usuario?: Persona }[];
+  recursos_disponibles?: boolean | null;
+  fecha_dictamen?: string | null;
   solicitante?: Persona;
   fecha_solicitud?: string;
   created_at?: string;
@@ -74,20 +83,21 @@ export interface PlanIntervencion {
   hora_fin: string;
   cuadrilla: string | null;
   observaciones: string | null;
-  es_vigente: boolean;
-  fecha_anterior?: string | null;
-  motivo_reprogramacion?: string | null;
+  estado_plan: 'VIGENTE' | 'EJECUTADO' | 'REEMPLAZADO' | string;
+  reprogramaciones?: { id: number; motivo?: string; created_at?: string }[];
   created_at: string;
 }
 
 export interface Actividad {
   id: number;
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
   actividades_realizadas: string;
   tiempo_invertido_minutos: number;
   dificultades_observaciones: string | null;
-  materiales?: { nombre: string; cantidad: number; unidad: string }[] | null;
-  created_at: string;
-  tecnico?: Persona;
+  materiales?: { id: number; nombre: string; cantidad: number; unidad: string }[] | null;
+  created_at?: string;
+  tecnico_ejecutor?: Persona;
 }
 
 export interface Suspension {
@@ -95,18 +105,20 @@ export interface Suspension {
   causal: string;
   motivo_detallado: string;
   condiciones_reanudacion: string;
-  fecha_inicio?: string;
-  fecha_fin?: string | null;
-  created_at: string;
+  estado_origen: string;
+  fecha_suspension: string;
+  observacion_reanudacion: string | null;
+  estado_destino: string | null;
+  fecha_reanudacion: string | null;
 }
 
 export interface Verificacion {
   id: number;
-  resultado: string;
-  criterios?: { criterio: string; cumple: boolean }[] | null;
+  resultado_conforme: boolean;
+  criterios_evaluados: { criterio: string; cumple: boolean }[] | null;
   observaciones: string | null;
-  motivo_rechazo?: string | null;
-  correccion_requerida?: string | null;
+  motivo_rechazo: string | null;
+  correccion_requerida: string | null;
   created_at: string;
   verificador?: Persona;
 }

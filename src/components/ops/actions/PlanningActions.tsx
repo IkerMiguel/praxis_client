@@ -17,8 +17,9 @@ export default function PlanningActions(ctx: ActionContext) {
   const code = inc.estado.codigo;
   const coord = hasRole(role, 'R03');
   const isAssignedTech = role === 'R04' && inc.tecnico_asignado?.id === userId;
-  const diagnosis = inc.diagnosticos.find((d) => d.es_vigente !== false) ?? inc.diagnosticos.at(-1);
-  const discarded = diagnosis?.dano_confirmado === false;
+  // Diagnóstico enviado por el técnico que espera la decisión de coordinación.
+  const diagnosis = [...inc.diagnosticos].reverse().find((d) => d.estado === 'REGISTRADO');
+  const discarded = diagnosis?.incidencia_confirmada === false;
   const canSuspend = ['E06', 'E07', 'E09', 'E10', 'E11'].includes(code) && (coord || isAssignedTech);
   const canReassign = coord && inc.tecnico_asignado && ['E06', 'E07', 'E10', 'E11', 'E13', 'E18'].includes(code);
 
@@ -38,7 +39,7 @@ export default function PlanningActions(ctx: ActionContext) {
   if (items.length === 0) return null;
 
   return (
-    <ActionGroup title="Coordinación">
+    <ActionGroup title={coord ? 'Coordinación' : 'Atención'}>
       {items}
       <AssignDialog open={dialog === 'asignar'} onClose={() => setDialog(null)} ctx={ctx} />
       <ScheduleDialog open={dialog === 'programar' || dialog === 'reprogramar'} reschedule={dialog === 'reprogramar'} onClose={() => setDialog(null)} ctx={ctx} />

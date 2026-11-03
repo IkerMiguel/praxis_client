@@ -62,7 +62,7 @@ export default function OperationalDetailView({ id }: { id: string }) {
 function Detail({ inc, history, refresh, loading }: { inc: IncidenciaOperativa; history?: Awaited<ReturnType<typeof opsService.historial>>; refresh: (m?: string) => void; loading: boolean }) {
   const router = useRouter();
   const { activeRole, profile } = useSession();
-  const plan = inc.planes_intervencion.find((p) => p.es_vigente) ?? inc.planes_intervencion.at(-1);
+  const plan = inc.planes_intervencion.find((p) => p.estado_plan === 'VIGENTE') ?? inc.planes_intervencion.at(-1);
   const asignacion = inc.asignaciones.find((a) => a.es_vigente);
 
   return (
@@ -207,16 +207,18 @@ function Detail({ inc, history, refresh, loading }: { inc: IncidenciaOperativa; 
                 {[...inc.diagnosticos].reverse().map((d) => (
                   <li key={d.id} className="space-y-2 rounded-xl border border-praxis-line p-4 text-sm">
                     <div className="flex flex-wrap gap-2">
-                      {d.dano_confirmado === false ? <ToneBadge tone="gris">Daño no confirmado</ToneBadge> : <ToneBadge tone="violeta">Daño confirmado</ToneBadge>}
+                      <ToneBadge tone={DX_TONE[d.estado] ?? 'gris'}>{DX_LABEL[d.estado] ?? d.estado}</ToneBadge>
+                      {d.incidencia_confirmada === true && <ToneBadge tone="violeta">Daño confirmado</ToneBadge>}
+                      {d.incidencia_confirmada === false && <ToneBadge tone="gris">Daño no confirmado</ToneBadge>}
                       {d.requiere_recursos && <ToneBadge tone="amarillo">Requiere recursos</ToneBadge>}
                       {d.requiere_autorizacion && <ToneBadge tone="naranja">Requiere autorización</ToneBadge>}
-                      {d.es_vigente === false && <ToneBadge tone="gris">Devuelto</ToneBadge>}
                     </div>
-                    <DL label="Hallazgos" value={d.hallazgos} />
+                    {d.hallazgos && <DL label="Hallazgos" value={d.hallazgos} />}
                     {d.descripcion_problema && <DL label="Problema" value={d.descripcion_problema} />}
                     {d.intervencion_propuesta && <DL label="Intervención propuesta" value={d.intervencion_propuesta} />}
                     {d.alcance && <DL label="Alcance" value={d.alcance} />}
-                    {d.justificacion_descarte && <DL label="Justificación del descarte" value={d.justificacion_descarte} />}
+                    {d.justificacion_no_confirmada && <DL label="Justificación del descarte" value={d.justificacion_no_confirmada} />}
+                    {d.observaciones_devolucion && <DL label="Motivo de la devolución" value={d.observaciones_devolucion} />}
                     <p className="text-xs text-slate-400">{d.tecnico?.name} · {formatDateTime(d.created_at)}</p>
                   </li>
                 ))}
@@ -258,12 +260,12 @@ function Detail({ inc, history, refresh, loading }: { inc: IncidenciaOperativa; 
             <Card title="Programación" icon={<CalendarClock className="h-4 w-4" />}>
               <ul className="space-y-2">
                 {[...inc.planes_intervencion].reverse().map((p) => (
-                  <li key={p.id} className={`flex flex-wrap items-center gap-3 rounded-xl px-4 py-3 text-sm ${p.es_vigente ? 'bg-cyan-50' : 'bg-slate-50 opacity-70'}`}>
+                  <li key={p.id} className={`flex flex-wrap items-center gap-3 rounded-xl px-4 py-3 text-sm ${p.estado_plan === 'VIGENTE' ? 'bg-cyan-50' : 'bg-slate-50 opacity-70'}`}>
                     <span className="font-semibold text-slate-900">{formatDate(p.fecha_programada)}</span>
                     <span className="text-slate-600">{p.hora_inicio.slice(0, 5)}–{p.hora_fin.slice(0, 5)}</span>
                     {p.cuadrilla && <span className="text-slate-600">· {p.cuadrilla}</span>}
-                    {p.es_vigente && <span className="ml-auto text-xs font-bold text-cyan-700">Vigente</span>}
-                    {p.motivo_reprogramacion && <span className="w-full text-xs text-slate-500">Reprogramada: {p.motivo_reprogramacion}</span>}
+                    <span className={`ml-auto text-xs font-bold ${p.estado_plan === 'VIGENTE' ? 'text-cyan-700' : 'text-slate-400'}`}>{PLAN_LABEL[p.estado_plan] ?? p.estado_plan}</span>
+                    {p.observaciones && <span className="w-full text-xs text-slate-500">{p.observaciones}</span>}
                   </li>
                 ))}
               </ul>
@@ -274,9 +276,19 @@ function Detail({ inc, history, refresh, loading }: { inc: IncidenciaOperativa; 
             <Card title="Ejecución" icon={<Wrench className="h-4 w-4" />}>
               {inc.actividades.map((a) => (
                 <div key={a.id} className="space-y-2 rounded-xl border border-praxis-line p-4 text-sm">
-                  <DL label="Actividades realizadas" value={a.actividades_realizadas} />
-                  <p className="text-xs text-slate-500">Tiempo invertido: {formatHours(a.tiempo_invertido_minutos / 60)}</p>
+                  {!a.actividades_realizadas ? (
+                    <p className="flex items-center gap-2 font-semibold text-cyan-800">
+                      <span className="h-2 w-2 animate-pulse rounded-full bg-cyan-500" aria-hidden="true" />
+                      Atención en curso desde {formatDateTime(a.fecha_inicio)}
+                    </p>
+                  ) : (
+                    <>
+                      <DL label="Actividades realizadas" value={a.actividades_realizadas} />
+                      <p className="text-xs text-slate-500">Tiempo invertido: {formatHours(a.tiempo_invertido_minutos / 60)}</p>
+                    </>
+                  )}
                   {a.dificultades_observaciones && <DL label="Dificultades" value={a.dificultades_observaciones} />}
+                  {a.tecnico_ejecutor && <p className="text-xs text-slate-400">{a.tecnico_ejecutor.name} · {formatDateTime(a.fecha_fin ?? a.fecha_inicio)}</p>}
                   {a.materiales && a.materiales.length > 0 && (
                     <p className="text-xs text-slate-600">Materiales: {a.materiales.map((m) => `${m.cantidad} ${m.unidad} ${m.nombre}`).join(', ')}</p>
                   )}
@@ -292,6 +304,11 @@ function Detail({ inc, history, refresh, loading }: { inc: IncidenciaOperativa; 
                   <p className="font-semibold text-amber-900">{s.causal.replace(/_/g, ' ').toLowerCase()}</p>
                   <p className="mt-1 text-amber-900/80">{s.motivo_detallado}</p>
                   <p className="mt-1 text-xs text-amber-800">Para reanudar: {s.condiciones_reanudacion}</p>
+                  <p className="mt-1 text-xs text-amber-700/80">
+                    Desde {formatDateTime(s.fecha_suspension)}
+                    {s.fecha_reanudacion ? ` · reanudada ${formatDateTime(s.fecha_reanudacion)}` : ' · en curso'}
+                  </p>
+                  {s.observacion_reanudacion && <p className="mt-1 text-xs text-amber-900">{s.observacion_reanudacion}</p>}
                 </div>
               ))}
             </Card>
@@ -300,11 +317,11 @@ function Detail({ inc, history, refresh, loading }: { inc: IncidenciaOperativa; 
           {inc.verificaciones.length > 0 && (
             <Card title="Verificación de calidad" icon={<ClipboardCheck className="h-4 w-4" />}>
               {inc.verificaciones.map((v) => (
-                <div key={v.id} className={`space-y-2 rounded-xl p-4 text-sm ${v.resultado.includes('NO') || v.resultado.includes('RECHAZ') ? 'bg-red-50' : 'bg-emerald-50'}`}>
-                  <p className="font-semibold text-slate-900">{v.resultado.replace(/_/g, ' ').toLowerCase()}</p>
-                  {v.criterios && (
+                <div key={v.id} className={`space-y-2 rounded-xl p-4 text-sm ${v.resultado_conforme ? 'bg-emerald-50' : 'bg-red-50'}`}>
+                  <p className="font-semibold text-slate-900">{v.resultado_conforme ? 'Conforme' : 'No conforme'}</p>
+                  {v.criterios_evaluados && (
                     <ul className="flex flex-wrap gap-1.5">
-                      {v.criterios.map((c) => (
+                      {v.criterios_evaluados.map((c) => (
                         <li key={c.criterio} className={`rounded-full px-2 py-0.5 text-xs font-semibold ${c.cumple ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
                           {c.cumple ? '✓' : '✗'} {c.criterio}
                         </li>
@@ -331,6 +348,10 @@ function Detail({ inc, history, refresh, loading }: { inc: IncidenciaOperativa; 
     </div>
   );
 }
+
+const DX_LABEL: Record<string, string> = { EN_INSPECCION: 'En inspección', REGISTRADO: 'Esperando decisión', DEVUELTO: 'Devuelto', APROBADO: 'Aprobado' };
+const DX_TONE: Record<string, 'violeta' | 'amarillo' | 'rojo' | 'verde'> = { EN_INSPECCION: 'violeta', REGISTRADO: 'amarillo', DEVUELTO: 'rojo', APROBADO: 'verde' };
+const PLAN_LABEL: Record<string, string> = { VIGENTE: 'Vigente', EJECUTADO: 'Ejecutado', REEMPLAZADO: 'Reemplazado' };
 
 function Card({ title, icon, children }: { title: string; icon?: ReactNode; children: ReactNode }) {
   return (

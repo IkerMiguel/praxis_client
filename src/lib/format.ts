@@ -13,16 +13,21 @@ const longDateFmt = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'l
 const timeFmt = new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: TZ });
 const relativeFmt = new Intl.RelativeTimeFormat('es', { numeric: 'auto' });
 
+/** Las fechas sin hora (Y-m-d) se fijan al mediodía para no cambiar de día por la zona horaria. */
+function parse(iso: string): Date {
+  return new Date(/^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso}T12:00:00` : iso);
+}
+
 export function formatDate(iso?: string | null): string {
-  return iso ? dateFmt.format(new Date(iso)) : '—';
+  return iso ? dateFmt.format(parse(iso)) : '—';
 }
 
 export function formatDateTime(iso?: string | null): string {
-  return iso ? dateTimeFmt.format(new Date(iso)) : '—';
+  return iso ? dateTimeFmt.format(parse(iso)) : '—';
 }
 
 export function formatLongDate(iso?: string | null): string {
-  return iso ? longDateFmt.format(new Date(iso)) : '—';
+  return iso ? longDateFmt.format(parse(iso)) : '—';
 }
 
 export function formatTime(iso?: string | null): string {
