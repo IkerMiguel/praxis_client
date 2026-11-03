@@ -23,7 +23,17 @@ const STATE_TONES: Record<string, Tone> = {
 
 const PRIORITY_TONES: Record<string, Tone> = { CRITICA: 'rojo', ALTA: 'naranja', MEDIA: 'amarillo', BAJA: 'verde' };
 
-const SLA_TONES: Record<string, Tone> = { EN_PLAZO: 'verde', PROXIMA_A_VENCER: 'amarillo', VENCIDA: 'rojo', SIN_META: 'gris', DETENIDO: 'gris' };
+const SLA_TONES: Record<string, Tone> = {
+  EN_PLAZO: 'verde',
+  PROXIMA_A_VENCER: 'amarillo',
+  VENCIDA: 'rojo',
+  CUMPLIDA: 'verde',
+  INCUMPLIDA: 'rojo',
+  SIN_META: 'gris',
+  DETENIDO: 'gris',
+  PAUSADA: 'gris',
+  SIN_PLAZO: 'gris',
+};
 
 function asTone(value?: string | null): Tone | null {
   return value && value in TONE_CLASSES ? (value as Tone) : null;
@@ -47,6 +57,10 @@ export const SLA_LABELS: Record<string, string> = {
   VENCIDA: 'Vencida',
   SIN_META: 'Sin meta',
   DETENIDO: 'Detenido',
+  CUMPLIDA: 'Cumplida',
+  INCUMPLIDA: 'Incumplida',
+  PAUSADA: 'Pausada',
+  SIN_PLAZO: 'Sin plazo aún',
 };
 
 /** Estados en los que la solicitud ya terminó. */
