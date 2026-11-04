@@ -1,238 +1,262 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { ChevronLeft, MailCheck } from 'lucide-react';
 import { passwordRecoveryService } from '@/services/passwordRecoveryService';
-import { apiErrorMessage, apiFieldErrors } from '@/lib/apiError';
-import RecoveryShell from './RecoveryShell';
+import { apiErrorMessage, apiFieldErrors, apiStatus } from '@/lib/apiError';
+import { meetsPolicy } from '@/lib/passwordPolicy';
+import AuthLayout from '../AuthLayout';
+import { authButton, authInput, authInputError, authLabel, authLink } from '../authStyles';
+import StepIndicator from './StepIndicator';
+import CodeInput from './CodeInput';
+import PasswordField from './PasswordField';
+import PasswordRequirements from './PasswordRequirements';
 import FormAlert from './FormAlert';
-import MailSentIllustration from './MailSentIllustration';
 
-const RESEND_COOLDOWN_SECONDS = 60;
+const RESEND_SECONDS = 60;
+const CODE_LENGTH = 6;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+type Step = 'email' | 'code' | 'password' | 'done';
 
-type Step = 'email' | 'sent';
+const COPY: Record<Step, { title: string; subtitle: string }> = {
+  email: { title: 'Recuperar contraseña', subtitle: 'Te enviaremos un código a tu correo institucional' },
+  code: { title: 'Revisa tu correo', subtitle: 'Escribe el código de 6 dígitos que te enviamos' },
+  password: { title: 'Nueva contraseña', subtitle: 'Crea una contraseña segura para tu cuenta' },
+  done: { title: 'Contraseña actualizada', subtitle: 'Ya puedes iniciar sesión con tu nueva clave' },
+};
 
+/** Restablecimiento por código numérico enviado al correo (HU-1.4). */
 export default function RequestRecoveryFlow() {
+  const router = useRouter();
   const reduceMotion = useReducedMotion();
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [code, setCode] = useState('');
+  const [token, setToken] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmation, setConfirmation] = useState('');
   const [fieldError, setFieldError] = useState('');
+  const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [busy, setBusy] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-  const [sendCount, setSendCount] = useState(0);
-  const emailInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (cooldown <= 0) return;
-    const timer = setTimeout(() => setCooldown((s) => s - 1), 1000);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => setCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(t);
   }, [cooldown]);
 
-  const sendLink = async (): Promise<boolean> => {
-    setLoading(true);
+  const go = (next: Step) => {
     setError('');
+    setFieldError('');
     setNotice('');
+    setStep(next);
+  };
 
+  const sendCode = async (resend = false) => {
+    const value = email.trim();
+    if (!EMAIL_PATTERN.test(value)) {
+      setFieldError(value ? 'Revisa el formato del correo.' : 'Escribe tu correo institucional.');
+      return;
+    }
+    setBusy(true);
+    setError('');
     try {
-      await passwordRecoveryService.request(email.trim());
-      setCooldown(RESEND_COOLDOWN_SECONDS);
-      setSendCount((n) => n + 1);
-      return true;
+      await passwordRecoveryService.request(value);
+      setCooldown(RESEND_SECONDS);
+      setCode('');
+      if (resend) setNotice('Te enviamos un código nuevo. El anterior dejó de funcionar.');
+      else go('code');
     } catch (err) {
       const fields = apiFieldErrors(err);
-      if (fields.email) {
-        setFieldError(fields.email);
-        if (step === 'sent') setStep('email');
-      } else {
-        setError(apiErrorMessage(err, 'No pudimos enviar el enlace. Intenta de nuevo.'));
-      }
-      return false;
+      if (fields.email) setFieldError(fields.email);
+      else setError(apiErrorMessage(err, 'No pudimos enviar el código. Intenta de nuevo.'));
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const value = email.trim();
-
-    if (!value) {
-      setFieldError('Escribe tu correo institucional.');
-      emailInput.current?.focus();
+  const verify = async (value = code) => {
+    if (value.length !== CODE_LENGTH) {
+      setFieldError(`Escribe los ${CODE_LENGTH} dígitos del código.`);
       return;
     }
-    if (!EMAIL_PATTERN.test(value)) {
-      setFieldError('Revisa el formato del correo, por ejemplo nombre@universidad.edu.co.');
-      emailInput.current?.focus();
-      return;
-    }
-
-    setFieldError('');
-    if (await sendLink()) setStep('sent');
-  };
-
-  const handleResend = async () => {
-    if (await sendLink()) setNotice('Te enviamos un enlace nuevo. Los enlaces anteriores dejaron de funcionar.');
-  };
-
-  const changeEmail = () => {
-    setStep('email');
+    setBusy(true);
     setError('');
-    setNotice('');
+    setFieldError('');
+    try {
+      setToken(await passwordRecoveryService.verifyCode(email.trim(), value));
+      go('password');
+    } catch (err) {
+      const status = apiStatus(err);
+      if (status === 404 || status === 405) setError('La verificación por código todavía no está disponible en el servidor. Contacta a la mesa de ayuda.');
+      else setFieldError(apiFieldErrors(err).codigo ?? apiErrorMessage(err, 'El código no es válido o ya venció.'));
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const direction = step === 'email' ? -1 : 1;
-  const slide = reduceMotion
-    ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } }
-    : {
-        initial: { opacity: 0, x: 48 * direction },
-        animate: { opacity: 1, x: 0 },
-        exit: { opacity: 0, x: -48 * direction },
-      };
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!meetsPolicy(password)) return setFieldError('La contraseña todavía no cumple todos los requisitos.');
+    if (confirmation !== password) return setFieldError('Las contraseñas no coinciden.');
+    setBusy(true);
+    setError('');
+    setFieldError('');
+    try {
+      await passwordRecoveryService.reset({ token, password, password_confirmation: confirmation });
+      go('done');
+      setTimeout(() => router.replace('/auth/login?restablecida=1'), 2500);
+    } catch (err) {
+      if (apiStatus(err) === 410) {
+        setError('El código venció mientras creabas la contraseña. Solicita uno nuevo.');
+        setStep('code');
+        return;
+      }
+      setFieldError(apiFieldErrors(err).password ?? '');
+      setError(apiFieldErrors(err).password ? '' : apiErrorMessage(err, 'No pudimos actualizar tu contraseña.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const slide = reduceMotion ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } } : { initial: { opacity: 0, x: 24 }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -24 } };
+  const stepNumber = { email: 1, code: 2, password: 3, done: 4 }[step];
 
   return (
-    <RecoveryShell step={step === 'email' ? 1 : 2}>
-      <AnimatePresence mode="wait" initial={false}>
-        {step === 'email' ? (
-          <motion.div key="email" {...slide} transition={{ duration: 0.3, ease: 'easeOut' }} className="space-y-7">
-            <header className="space-y-2">
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">¿Olvidaste tu contraseña?</h2>
-              <p className="text-sm sm:text-base leading-relaxed text-slate-500">
-                Escribe el correo con el que ingresas a PRAXIS y te enviaremos un enlace para crear una nueva.
-              </p>
-            </header>
+    <AuthLayout
+      title={COPY[step].title}
+      subtitle={COPY[step].subtitle}
+      showcaseTitle="Recupera el acceso a tu cuenta institucional."
+      showcaseDescription="Te enviaremos un código de un solo uso. Al crear tu nueva contraseña cerraremos las sesiones abiertas en otros equipos."
+      top={
+        <Link href="/auth/login" className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-900">
+          <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
+          Volver al inicio de sesión
+        </Link>
+      }
+    >
+      <StepIndicator current={stepNumber} />
 
-            <form onSubmit={handleSubmit} noValidate className="space-y-5">
-              <div className="space-y-2">
-                <label htmlFor="recovery-email" className="block text-sm font-semibold text-slate-700">
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div key={step} {...slide} transition={{ duration: 0.25, ease: 'easeOut' }} className="space-y-4 sm:space-y-5">
+          {step === 'email' && (
+            <form
+              noValidate
+              className="space-y-4 sm:space-y-5"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void sendCode();
+              }}
+            >
+              <div className="space-y-1.5">
+                <label htmlFor="rec-email" className={authLabel}>
                   Correo institucional
                 </label>
                 <div className="relative flex items-center">
-                  <svg className="pointer-events-none absolute left-4 h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5A2.5 2.5 0 015.5 5h13A2.5 2.5 0 0121 7.5v9a2.5 2.5 0 01-2.5 2.5h-13A2.5 2.5 0 013 16.5v-9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.5 7l8.5 6 8.5-6" />
-                  </svg>
+                  <span className="absolute left-3.5 text-slate-400 text-sm font-medium">@</span>
                   <input
-                    ref={emailInput}
-                    id="recovery-email"
+                    id="rec-email"
                     type="email"
                     autoComplete="email"
                     autoFocus
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
-                      if (fieldError) setFieldError('');
+                      setFieldError('');
                     }}
                     aria-invalid={fieldError ? true : undefined}
-                    aria-describedby={fieldError ? 'recovery-email-error' : undefined}
                     placeholder="nombre@universidad.edu.co"
-                    className={`w-full rounded-xl border bg-[#EEF2F6] py-4 pl-12 pr-4 text-base text-slate-900 transition focus:bg-white focus:outline-none focus:ring-4 ${
-                      fieldError
-                        ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
-                        : 'border-transparent focus:border-[#1CA3E9] focus:ring-[#1CA3E9]/15'
-                    }`}
+                    className={`${authInput} pl-9 pr-4 ${fieldError ? authInputError : ''}`}
                   />
                 </div>
-                <AnimatePresence>
-                  {fieldError && (
-                    <motion.p
-                      id="recovery-email-error"
-                      className="text-sm text-red-600"
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                    >
-                      {fieldError}
-                    </motion.p>
-                  )}
-                </AnimatePresence>
+                {fieldError && <p className="text-xs text-red-600">{fieldError}</p>}
               </div>
-
               <FormAlert message={error} />
-
-              <motion.button
-                type="submit"
-                disabled={loading}
-                whileTap={reduceMotion ? undefined : { scale: 0.98 }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#111827] px-4 py-4 text-base font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-800 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1CA3E9]"
-              >
-                {loading ? 'Enviando…' : 'Enviar enlace de recuperación'}
-              </motion.button>
+              <button type="submit" disabled={busy} className={authButton}>
+                {busy ? 'Enviando…' : 'Enviar código →'}
+              </button>
             </form>
+          )}
 
-            <p className="text-center text-sm text-slate-500">
-              ¿La recordaste?{' '}
-              <Link href="/auth/login" className="font-semibold text-slate-900 hover:underline">
-                Inicia sesión
-              </Link>
-            </p>
-          </motion.div>
-        ) : (
-          <motion.div key="sent" {...slide} transition={{ duration: 0.3, ease: 'easeOut' }} className="space-y-7">
-            <MailSentIllustration playKey={sendCount} />
-
-            <header className="space-y-2 text-center">
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Revisa tu correo</h2>
-              <p className="text-sm sm:text-base leading-relaxed text-slate-500">
-                Si <span className="font-semibold text-slate-900 break-all">{email.trim()}</span> está registrado en PRAXIS,
-                te llegará un enlace para crear una nueva contraseña.
+          {step === 'code' && (
+            <form
+              noValidate
+              className="space-y-4 sm:space-y-5"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void verify();
+              }}
+            >
+              <p className="flex items-start gap-2 rounded-xl bg-[#F3F4F8] px-3 py-2.5 text-xs leading-relaxed text-slate-600">
+                <MailCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
+                <span>
+                  Si <span className="font-semibold text-slate-900 break-all">{email.trim()}</span> está registrado, te llegó un código. Revisa también la carpeta de spam.
+                </span>
               </p>
-            </header>
-
-            <ul className="space-y-3 rounded-2xl bg-[#F3F4F8] p-5 text-sm text-slate-600">
-              {[
-                'El enlace vence en 30 minutos y solo se puede usar una vez.',
-                'Si no lo ves en unos minutos, revisa la carpeta de spam o correo no deseado.',
-                'Si pides otro enlace, solo funcionará el más reciente.',
-              ].map((tip) => (
-                <li key={tip} className="flex gap-3">
-                  <svg className="mt-0.5 h-4 w-4 shrink-0 text-[#35BE8B]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  {tip}
-                </li>
-              ))}
-            </ul>
-
-            <FormAlert message={error} />
-            <FormAlert message={notice} tone="success" />
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={handleResend}
-                disabled={loading || cooldown > 0}
-                className="flex items-center justify-center gap-2 rounded-xl bg-[#111827] px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1CA3E9]"
-              >
-                {loading ? (
-                  'Enviando…'
-                ) : cooldown > 0 ? (
-                  <span className="tabular-nums">Reenviar en {formatSeconds(cooldown)}</span>
-                ) : (
-                  'Reenviar enlace'
-                )}
+              <div className="space-y-1.5">
+                <p className={authLabel}>Código de verificación</p>
+                <CodeInput
+                  value={code}
+                  autoFocus
+                  invalid={Boolean(fieldError)}
+                  onChange={(v) => {
+                    setCode(v);
+                    setFieldError('');
+                  }}
+                  onComplete={(v) => void verify(v)}
+                />
+                {fieldError && <p className="text-xs text-red-600">{fieldError}</p>}
+              </div>
+              <FormAlert message={error} />
+              <FormAlert message={notice} tone="success" />
+              <button type="submit" disabled={busy || code.length !== CODE_LENGTH} className={authButton}>
+                {busy ? 'Verificando…' : 'Verificar código →'}
               </button>
-              <button
-                type="button"
-                onClick={changeEmail}
-                className="rounded-xl border border-slate-200 px-4 py-3.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1CA3E9]"
-              >
-                Usar otro correo
+              <div className="flex items-center justify-between text-xs">
+                <button type="button" onClick={() => go('email')} className={authLink}>
+                  Usar otro correo
+                </button>
+                <button type="button" onClick={() => void sendCode(true)} disabled={busy || cooldown > 0} className={`${authLink} disabled:font-semibold disabled:text-slate-400 disabled:no-underline`}>
+                  {cooldown > 0 ? `Reenviar en ${cooldown}s` : 'Reenviar código'}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {step === 'password' && (
+            <form noValidate className="space-y-4" onSubmit={save}>
+              <PasswordField id="new-password" label="Nueva contraseña" value={password} autoFocus describedBy="password-requirements" onChange={(v) => { setPassword(v); setFieldError(''); }} />
+              <PasswordRequirements id="password-requirements" password={password} />
+              <PasswordField id="confirm-password" label="Confirmar contraseña" value={confirmation} onChange={(v) => { setConfirmation(v); setFieldError(''); }} />
+              {confirmation && confirmation === password && <p className="text-xs font-semibold text-emerald-700">✓ Las contraseñas coinciden</p>}
+              {fieldError && <p className="text-xs text-red-600">{fieldError}</p>}
+              <FormAlert message={error} />
+              <button type="submit" disabled={busy} className={authButton}>
+                {busy ? 'Guardando…' : 'Guardar contraseña →'}
               </button>
+            </form>
+          )}
+
+          {step === 'done' && (
+            <div className="flex flex-col items-center gap-3 py-4 text-center" role="status">
+              <motion.span initial={reduceMotion ? false : { scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 16 }} className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} aria-hidden="true">
+                  <motion.path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" initial={reduceMotion ? false : { pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.2, duration: 0.4 }} />
+                </svg>
+              </motion.span>
+              <p className="text-xs text-slate-500">Cerramos tus sesiones en otros equipos. Te llevamos al inicio de sesión…</p>
+              <Link href="/auth/login?restablecida=1" replace className={authButton}>
+                Iniciar sesión ahora
+              </Link>
             </div>
-          </motion.div>
-        )}
+          )}
+        </motion.div>
       </AnimatePresence>
-    </RecoveryShell>
+    </AuthLayout>
   );
-}
-
-function formatSeconds(total: number): string {
-  const minutes = Math.floor(total / 60);
-  const seconds = total % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }

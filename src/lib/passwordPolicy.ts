@@ -13,7 +13,7 @@ export const PASSWORD_RULES: PasswordRule[] = [
   { id: 'upper', label: 'Una letra mayúscula', test: (p) => /\p{Lu}/u.test(p) },
   { id: 'lower', label: 'Una letra minúscula', test: (p) => /\p{Ll}/u.test(p) },
   { id: 'number', label: 'Un número', test: (p) => /\p{N}/u.test(p) },
-  { id: 'symbol', label: 'Un símbolo, como ! @ # $', test: (p) => /[\p{Z}\p{S}\p{P}]/u.test(p) },
+  { id: 'symbol', label: 'Un símbolo (!@#$)', test: (p) => /[\p{Z}\p{S}\p{P}]/u.test(p) },
 ];
 
 export function passedRules(password: string): Set<string> {
