@@ -27,7 +27,8 @@ export default function UserMenu() {
       <Popover
         open={open}
         onClose={() => setOpen(false)}
-        className="w-72"
+        // Mismo ancho que el botón del usuario; en móvil el botón solo muestra el avatar y el panel usa un ancho fijo.
+        className="w-64 sm:left-0 sm:w-auto"
         trigger={
           <button
             type="button"
@@ -48,10 +49,10 @@ export default function UserMenu() {
         }
       >
         <div className="border-b border-praxis-line bg-gradient-to-br from-slate-50 to-white px-4 py-3.5">
-          <p className="text-sm font-bold text-slate-900">{profile.nombre}</p>
-          <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
-            <Mail className="h-3.5 w-3.5" aria-hidden="true" />
-            {profile.email}
+          <p className="truncate text-sm font-bold text-slate-900">{profile.nombre}</p>
+          <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-slate-500" title={profile.email}>
+            <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span className="truncate">{profile.email}</span>
           </p>
           {profile.especialidades.length > 0 && (
             <p className="mt-2 flex flex-wrap items-center gap-1">
