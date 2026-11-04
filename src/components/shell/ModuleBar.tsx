@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'motion/react';
@@ -44,17 +44,28 @@ export default function ModuleBar() {
     return [...map.entries()].sort(([a], [b]) => GROUP_ORDER.indexOf(a) - GROUP_ORDER.indexOf(b));
   }, [menu]);
 
+  useEffect(() => {
+    if (!megaOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setMegaOpen(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [megaOpen]);
+
   const spring = reduceMotion ? { duration: 0 } : { type: 'spring' as const, stiffness: 420, damping: 34 };
 
   return (
-    <div className="relative border-b border-praxis-line bg-praxis-surface/80 backdrop-blur">
-      <nav aria-label="Módulos" className="mx-auto flex max-w-[1440px] items-center gap-2 px-4 py-2.5 sm:px-6 lg:px-8">
+    <div className="relative border-b border-praxis-line">
+      {/* Fondo de la barra en su propia capa: si el desenfoque estuviera en el contenedor, el velo fijo quedaría atrapado dentro de la barra */}
+      <div className="absolute inset-0 z-50 bg-praxis-surface/80 backdrop-blur" aria-hidden="true" />
+      <nav aria-label="Módulos" className="relative z-50 mx-auto flex max-w-[1440px] items-center gap-2 px-4 py-2.5 sm:px-6 lg:px-8">
         <button
           type="button"
           onClick={() => setMegaOpen((v) => !v)}
           aria-expanded={megaOpen}
           aria-controls="mega-menu"
-          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-praxis-navy px-4 text-sm font-semibold text-white shadow-sm shadow-slate-900/20 transition hover:bg-praxis-navy-soft"
+          className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-praxis-navy px-4 text-sm font-semibold text-white shadow-sm shadow-slate-900/20 transition hover:bg-praxis-navy-soft ${
+            megaOpen ? 'ring-4 ring-praxis-sky/30' : ''
+          }`}
         >
           {megaOpen ? <X className="h-4 w-4" aria-hidden="true" /> : <LayoutGrid className="h-4 w-4" aria-hidden="true" />}
           <span className="hidden sm:inline">Módulos</span>
@@ -66,7 +77,8 @@ export default function ModuleBar() {
           <ul className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [scrollbar-width:none]">
             {shortcuts.map((item) => {
               const Icon = moduleIcon(item.icono);
-              const active = current?.codigo === item.codigo;
+              // Con el menú de módulos abierto la selección pasa al botón "Módulos"; al cerrarlo vuelve aquí.
+              const active = current?.codigo === item.codigo && !megaOpen;
               return (
                 <li key={item.codigo} className="shrink-0">
                   <Link
@@ -145,7 +157,7 @@ export default function ModuleBar() {
         {megaOpen && (
           <>
             <motion.div
-              className="fixed inset-0 z-40 bg-slate-950/20"
+              className="fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-[3px]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -159,7 +171,6 @@ export default function ModuleBar() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.18 }}
-              onKeyDown={(e) => e.key === 'Escape' && setMegaOpen(false)}
             >
               <div className="mt-2 grid gap-6 rounded-3xl border border-praxis-line bg-white p-6 shadow-2xl shadow-slate-900/15 md:grid-cols-[repeat(auto-fit,minmax(200px,1fr))_260px]">
                 {groups.map(([group, items], groupIndex) => (
