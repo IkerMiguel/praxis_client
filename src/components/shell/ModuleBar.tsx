@@ -203,7 +203,7 @@ export default function ModuleBar() {
                               aria-current={active ? 'page' : undefined}
                               className={`flex gap-3 rounded-2xl px-3 transition-all duration-300 ${
                                 active
-                                  ? 'min-h-[150px] items-start bg-gradient-to-br from-sky-50 to-white py-6 shadow-md shadow-sky-900/10 ring-1 ring-sky-200'
+                                  ? 'min-h-[150px] items-center bg-gradient-to-br from-sky-50 to-white py-6 shadow-md shadow-sky-900/10 ring-1 ring-sky-200'
                                   : 'items-start py-2.5 hover:bg-slate-50'
                               }`}
                             >
