@@ -47,7 +47,7 @@ export default function UserMenu() {
           </button>
         }
       >
-        <div className="border-b border-praxis-line bg-gradient-to-br from-slate-50 to-white px-4 py-4">
+        <div className="border-b border-praxis-line bg-gradient-to-br from-slate-50 to-white px-4 py-3.5">
           <p className="text-sm font-bold text-slate-900">{profile.nombre}</p>
           <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
             <Mail className="h-3.5 w-3.5" aria-hidden="true" />
@@ -65,16 +65,13 @@ export default function UserMenu() {
           )}
         </div>
 
-        <div className="p-2">
-          <RoleSwitcher onDone={() => setOpen(false)} />
-          {profile.roles.length < 2 && (
-            <p className="px-3 py-2 text-xs text-slate-500">
-              Rol: <span className="font-semibold text-slate-700">{profile.rol_activo?.nombre}</span>
-            </p>
-          )}
-        </div>
+        {profile.roles.length > 1 && (
+          <div className="border-b border-praxis-line p-2">
+            <RoleSwitcher onDone={() => setOpen(false)} />
+          </div>
+        )}
 
-        <div className="border-t border-praxis-line p-2">
+        <div className="p-2">
           <Link href="/ayuda" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
             <CircleHelp className="h-4 w-4 text-slate-400" aria-hidden="true" />
             Centro de ayuda
