@@ -166,13 +166,14 @@ export default function ModuleBar() {
             />
             <motion.div
               id="mega-menu"
-              className="absolute inset-x-0 top-full z-50 mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8"
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
+              className="absolute inset-x-0 top-full z-50 origin-top border-b border-praxis-line bg-white shadow-2xl shadow-slate-900/20"
+              initial={{ opacity: 0, scaleY: 0.96 }}
+              animate={{ opacity: 1, scaleY: 1 }}
+              exit={{ opacity: 0, scaleY: 0.96 }}
               transition={{ duration: 0.18 }}
             >
-              <div className="mt-2 grid gap-6 rounded-3xl border border-praxis-line bg-white p-6 shadow-2xl shadow-slate-900/15 md:grid-cols-[repeat(auto-fit,minmax(200px,1fr))_260px]">
+              <div className="mx-auto flex max-w-[1440px] flex-col gap-6 px-4 pb-8 pt-6 sm:px-6 md:flex-row lg:px-8">
+                <div className="grid flex-1 gap-x-4 gap-y-6 sm:grid-cols-[repeat(auto-fit,minmax(min(100%,185px),1fr))]">
                 {groups.map(([group, items], groupIndex) => (
                   <motion.section
                     key={group}
@@ -181,7 +182,7 @@ export default function ModuleBar() {
                     transition={{ delay: reduceMotion ? 0 : groupIndex * 0.04 }}
                   >
                     <h2 className="eyebrow mb-3">{group}</h2>
-                    <ul className="space-y-1">
+                    <ul className="grid gap-1 sm:grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))]">
                       {items.map((item) => {
                         const Icon = moduleIcon(item.icono);
                         const active = current?.codigo === item.codigo;
@@ -209,8 +210,9 @@ export default function ModuleBar() {
                     </ul>
                   </motion.section>
                 ))}
+                </div>
 
-                <aside className="rounded-2xl bg-gradient-to-br from-praxis-navy to-[#0a3d6e] p-5 text-white">
+                <aside className="shrink-0 self-start md:w-[300px] rounded-2xl bg-gradient-to-br from-praxis-navy to-[#0a3d6e] p-5 text-white">
                   <p className="text-sm font-bold">Coordinación de Planta Física</p>
                   <p className="mt-1 text-xs leading-relaxed text-sky-100/80">
                     Para emergencias con riesgo para las personas, comunícate de inmediato además de radicar el reporte.
