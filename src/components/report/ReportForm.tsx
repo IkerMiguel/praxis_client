@@ -132,6 +132,9 @@ function ReportFormBody({ sedes, categorias }: { sedes: Sede[]; categorias: Cate
       ...(form.riesgo ? [{ label: 'Detalle del riesgo', done: form.descripcionRiesgo.trim().length > 0 }] : []),
   ];
 
+  const required = checklist.filter((item) => !item.optional);
+  const progress = Math.round((required.filter((item) => item.done).length / required.length) * 100);
+
   const validate = (): boolean => {
     const next: Record<string, string> = {};
     if (!form.sedeId) next.sedeId = 'Elige la sede.';
@@ -235,7 +238,7 @@ function ReportFormBody({ sedes, categorias }: { sedes: Sede[]; categorias: Cate
         >
           <div className="h-2 bg-gradient-to-r from-praxis-blue via-praxis-sky to-praxis-green" aria-hidden="true" />
           <div className="space-y-10 p-6 sm:p-10">
-            <Section number={1} title="Ubicación exacta" subtitle="Identifica el punto donde está la falla" badge="Obligatorio">
+            <Section number={1} done={Boolean(espacio)} title="Ubicación exacta" subtitle="Identifica el punto donde está la falla" badge="Obligatorio">
               <div className="grid gap-4 md:grid-cols-3">
                 <SelectField label="Sede / campus" error={errors.sedeId} field="sedeId">
                   <select className={selectClass('sedeId')} value={form.sedeId ?? ''} onChange={(e) => pickLocation({ sedeId: Number(e.target.value) || null, edificioId: null, pisoId: null, espacioId: null })}>
@@ -266,15 +269,19 @@ function ReportFormBody({ sedes, categorias }: { sedes: Sede[]; categorias: Cate
                 ) : piso.espacios.length === 0 ? (
                   <p className="rounded-xl bg-slate-50 px-4 py-4 text-sm text-slate-500">Este piso no tiene espacios activos registrados.</p>
                 ) : (
-                  <div role="radiogroup" aria-label="Espacio" className="flex flex-wrap gap-2">
-                    {piso.espacios.map((sp) => {
+                  <div key={piso.id} role="radiogroup" aria-label="Espacio" className="flex flex-wrap gap-2">
+                    {piso.espacios.map((sp, index) => {
                       const selected = sp.id === form.espacioId;
                       return (
-                        <button
+                        <motion.button
                           key={sp.id}
                           type="button"
                           role="radio"
                           aria-checked={selected}
+                          initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ delay: index * 0.035, duration: 0.25 }}
+                          whileTap={{ scale: 0.97 }}
                           onClick={() => set('espacioId', sp.id)}
                           className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm font-semibold transition ${
                             selected ? 'border-praxis-blue bg-sky-50 text-sky-900 ring-4 ring-sky-100' : 'border-praxis-line bg-white text-slate-700 hover:border-slate-300'
@@ -283,7 +290,7 @@ function ReportFormBody({ sedes, categorias }: { sedes: Sede[]; categorias: Cate
                           <MapPin className={`h-4 w-4 ${selected ? 'text-sky-700' : 'text-slate-400'}`} aria-hidden="true" />
                           {sp.nombre}
                           <span className="font-mono text-[11px] font-medium text-slate-400">{sp.codigo}</span>
-                        </button>
+                        </motion.button>
                       );
                     })}
                   </div>
@@ -310,7 +317,7 @@ function ReportFormBody({ sedes, categorias }: { sedes: Sede[]; categorias: Cate
               </div>
             </Section>
 
-            <Section number={2} title="Clasificación y detalle" subtitle="Tipo de daño para despacharlo al equipo correcto" badge="Paso clave" badgeTone="sky">
+            <Section number={2} done={Boolean(categoria) && descLength >= MIN_DESC && (!form.riesgo || form.descripcionRiesgo.trim().length > 0)} title="Clasificación y detalle" subtitle="Tipo de daño para despacharlo al equipo correcto" badge="Paso clave" badgeTone="sky">
               <div data-field="categoriaId">
                 <p className="field-label">
                   Categoría principal <span className="text-red-500">*</span>
@@ -463,28 +470,31 @@ function ReportFormBody({ sedes, categorias }: { sedes: Sede[]; categorias: Cate
               </div>
             </Section>
 
-            <Section number={3} title="Evidencia fotográfica" subtitle="Ayuda al técnico a diagnosticar antes de llegar" badge={requiresPhoto ? 'Obligatorio' : 'Recomendado'} badgeTone={requiresPhoto ? 'amber' : 'green'}>
+            <Section number={3} done={evidencias.length > 0} title="Evidencia fotográfica" subtitle="Ayuda al técnico a diagnosticar antes de llegar" badge={requiresPhoto ? 'Obligatorio' : 'Recomendado'} badgeTone={requiresPhoto ? 'amber' : 'green'}>
               <div data-field="evidencias">
                 <EvidenceUploader value={evidencias} onChange={(v) => { setEvidencias(v); setErrors((e) => ({ ...e, evidencias: '' })); }} required={requiresPhoto} onBusyChange={setUploading} />
                 {errors.evidencias && <p className="mt-2 text-sm text-red-600">{errors.evidencias}</p>}
               </div>
             </Section>
 
-            {formError && (
-              <p role="alert" className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                {formError}
-              </p>
-            )}
+            <AnimatePresence initial={false}>
+              {formError && (
+                <motion.p role="alert" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0, x: [0, -6, 5, -3, 0] }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                  {formError}
+                </motion.p>
+              )}
+            </AnimatePresence>
 
             <div className="flex flex-col-reverse gap-3 border-t border-praxis-line pt-6 sm:flex-row sm:items-center">
               <Link href="/panel" className="btn-secondary h-12 px-6">
                 Cancelar
               </Link>
-              <button type="submit" disabled={uploading} className={`${form.riesgo ? 'btn-danger' : 'btn-primary'} h-12 px-7`}>
+              <motion.button type="submit" disabled={uploading} whileHover={uploading ? undefined : { y: -1 }} whileTap={{ scale: 0.98 }} className={`${form.riesgo ? 'btn-danger' : 'btn-primary'} group relative h-12 overflow-hidden px-7`}>
+                <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-white/25 to-transparent opacity-0 transition-all duration-700 group-hover:left-full group-hover:opacity-100" />
                 {uploading ? 'Esperando la carga de fotos…' : 'Revisar y enviar reporte'}
-                <Send className="h-4 w-4" aria-hidden="true" />
-              </button>
+                <Send className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
+              </motion.button>
               <span className="text-xs text-slate-400 sm:ml-auto">Borrador guardado en este equipo</span>
             </div>
           </div>
@@ -492,7 +502,13 @@ function ReportFormBody({ sedes, categorias }: { sedes: Sede[]; categorias: Cate
 
         <aside className="space-y-4 lg:sticky lg:top-44">
           <div className="card p-5">
-            <p className="text-sm font-bold text-slate-900">Tu reporte</p>
+            <div className="flex items-baseline justify-between">
+              <p className="text-sm font-bold text-slate-900">Tu reporte</p>
+              <span className="text-xs font-bold tabular-nums text-slate-500">{progress}%</span>
+            </div>
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100" aria-hidden="true">
+              <motion.div className="h-full rounded-full bg-gradient-to-r from-praxis-blue via-praxis-sky to-praxis-green" initial={false} animate={{ width: `${progress}%` }} transition={{ type: 'spring', stiffness: 120, damping: 20 }} />
+            </div>
             <ul className="mt-4 space-y-3">
               {checklist.map((item) => (
                 <li key={item.label} className="flex items-center gap-3 text-sm">
@@ -556,6 +572,7 @@ function ReportFormBody({ sedes, categorias }: { sedes: Sede[]; categorias: Cate
 
 function Section({
   number,
+  done = false,
   title,
   subtitle,
   badge,
@@ -563,6 +580,7 @@ function Section({
   children,
 }: {
   number: number;
+  done?: boolean;
   title: string;
   subtitle: string;
   badge: string;
@@ -571,9 +589,28 @@ function Section({
 }) {
   const tones = { slate: 'bg-slate-100 text-slate-600', sky: 'bg-sky-100 text-sky-800', green: 'bg-emerald-100 text-emerald-800', amber: 'bg-amber-100 text-amber-800' };
   return (
-    <section className="space-y-5" aria-labelledby={`section-${number}`}>
+    <motion.section
+      className="space-y-5"
+      aria-labelledby={`section-${number}`}
+      initial={{ opacity: 0, y: 18 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+    >
       <div className="flex items-start gap-4">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-praxis-navy text-sm font-bold text-white">{number}</span>
+        <motion.span
+          className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-bold text-white"
+          initial={false}
+          animate={{ backgroundColor: done ? '#10B981' : '#0B1B3A', scale: done ? [1, 1.12, 1] : 1 }}
+          transition={{ duration: 0.35 }}
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span key={done ? 'done' : 'n'} initial={{ opacity: 0, y: 10, rotate: -30 }} animate={{ opacity: 1, y: 0, rotate: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+              {done ? <Check className="h-4 w-4" strokeWidth={3} aria-hidden="true" /> : number}
+            </motion.span>
+          </AnimatePresence>
+          {done && <span className="sr-only">(completo)</span>}
+        </motion.span>
         <div className="flex-1">
           <h2 id={`section-${number}`} className="text-lg font-bold text-slate-900">
             {title}
@@ -583,7 +620,7 @@ function Section({
         <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${tones[badgeTone]}`}>{badge}</span>
       </div>
       <div className="space-y-5 sm:pl-14">{children}</div>
-    </section>
+    </motion.section>
   );
 }
 

@@ -3,14 +3,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ChevronLeft, Link2Off, WifiOff } from 'lucide-react';
 import { passwordRecoveryService } from '@/services/passwordRecoveryService';
 import { apiErrorMessage, apiFieldErrors, apiStatus } from '@/lib/apiError';
 import { meetsPolicy } from '@/lib/passwordPolicy';
 import AuthLayout from '../AuthLayout';
 import { authButton } from '../authStyles';
-import FormAlert from './FormAlert';
+import { AuthError, AuthItem, AuthSubmit } from '../AuthMotion';
 import PasswordField from './PasswordField';
 import PasswordRequirements from './PasswordRequirements';
 
@@ -28,6 +27,7 @@ const COPY: Record<Status, { title: string; subtitle: string }> = {
 function Shell({ status, children }: { status: Status; children: React.ReactNode }) {
   return (
     <AuthLayout
+      contentKey={status}
       title={COPY[status].title}
       subtitle={COPY[status].subtitle}
       showcaseTitle="Recupera el acceso a tu cuenta institucional."
@@ -47,7 +47,6 @@ function Shell({ status, children }: { status: Status; children: React.ReactNode
 /** Restablecimiento desde el enlace del correo (alternativa al código). */
 export default function ResetPasswordFlow({ token }: { token: string }) {
   const router = useRouter();
-  const reduceMotion = useReducedMotion();
   const [status, setStatus] = useState<Status>('checking');
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
@@ -85,12 +84,9 @@ export default function ResetPasswordFlow({ token }: { token: string }) {
     }
   };
 
-  const fade = reduceMotion ? {} : { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0 } };
-
   return (
     <Shell status={status}>
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div key={status} {...fade} className="space-y-4">
+      <AuthItem className="space-y-4">
           {status === 'checking' && <p className="py-6 text-center text-sm text-slate-500" role="status">Verificando tu enlace…</p>}
           {status === 'unreachable' && (
             <>
@@ -120,11 +116,8 @@ export default function ResetPasswordFlow({ token }: { token: string }) {
               <PasswordRequirements id="password-requirements" password={password} />
               <PasswordField id="confirm-password" label="Confirmar contraseña" value={confirmation} onChange={(v) => { setConfirmation(v); setFieldError(''); }} />
               {confirmation && confirmation === password && <p className="text-xs font-semibold text-emerald-700">✓ Las contraseñas coinciden</p>}
-              {fieldError && <p className="text-xs text-red-600">{fieldError}</p>}
-              <FormAlert message={error} />
-              <button type="submit" disabled={saving} className={authButton}>
-                {saving ? 'Guardando…' : 'Guardar contraseña →'}
-              </button>
+              <AuthError message={fieldError || error} />
+              <AuthSubmit state={saving ? 'loading' : 'idle'} label="Guardar contraseña" loadingLabel="Guardando" />
             </form>
           )}
           {status === 'done' && (
@@ -137,8 +130,7 @@ export default function ResetPasswordFlow({ token }: { token: string }) {
               </Link>
             </>
           )}
-        </motion.div>
-      </AnimatePresence>
+      </AuthItem>
     </Shell>
   );
 }

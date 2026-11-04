@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { ChevronLeft, MailCheck } from 'lucide-react';
+import { AtSign, Check, ChevronLeft, MailCheck, RotateCw } from 'lucide-react';
 import { passwordRecoveryService } from '@/services/passwordRecoveryService';
 import { apiErrorMessage, apiFieldErrors, apiStatus } from '@/lib/apiError';
 import { meetsPolicy } from '@/lib/passwordPolicy';
 import AuthLayout from '../AuthLayout';
-import { authButton, authInput, authInputError, authLabel, authLink } from '../authStyles';
+import { AuthError, AuthField, AuthItem, AuthSubmit } from '../AuthMotion';
+import { authButton } from '../authStyles';
 import StepIndicator from './StepIndicator';
 import CodeInput from './CodeInput';
 import PasswordField from './PasswordField';
@@ -27,6 +28,8 @@ const COPY: Record<Step, { title: string; subtitle: string }> = {
   password: { title: 'Nueva contraseña', subtitle: 'Crea una contraseña segura para tu cuenta' },
   done: { title: 'Contraseña actualizada', subtitle: 'Ya puedes iniciar sesión con tu nueva clave' },
 };
+
+const linkButton = 'group relative font-bold text-slate-900 disabled:cursor-not-allowed disabled:font-semibold disabled:text-slate-400';
 
 /** Restablecimiento por código numérico enviado al correo (HU-1.4). */
 export default function RequestRecoveryFlow() {
@@ -65,6 +68,7 @@ export default function RequestRecoveryFlow() {
     }
     setBusy(true);
     setError('');
+    setNotice('');
     try {
       await passwordRecoveryService.request(value);
       setCooldown(RESEND_SECONDS);
@@ -124,139 +128,175 @@ export default function RequestRecoveryFlow() {
     }
   };
 
-  const slide = reduceMotion ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } } : { initial: { opacity: 0, x: 24 }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -24 } };
   const stepNumber = { email: 1, code: 2, password: 3, done: 4 }[step];
+  const matches = confirmation.length > 0 && confirmation === password;
 
   return (
     <AuthLayout
+      contentKey={step}
       title={COPY[step].title}
       subtitle={COPY[step].subtitle}
       showcaseTitle="Recupera el acceso a tu cuenta institucional."
       showcaseDescription="Te enviaremos un código de un solo uso. Al crear tu nueva contraseña cerraremos las sesiones abiertas en otros equipos."
       top={
-        <Link href="/auth/login" className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-900">
-          <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
-          Volver al inicio de sesión
-        </Link>
+        step !== 'done' && (
+          <Link href="/auth/login" className="group inline-flex items-center gap-1 text-xs font-semibold text-slate-500 transition-colors hover:text-slate-900">
+            <ChevronLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" aria-hidden="true" />
+            Volver al inicio de sesión
+          </Link>
+        )
       }
     >
-      <StepIndicator current={stepNumber} />
+      <AuthItem>
+        <StepIndicator current={stepNumber} />
+      </AuthItem>
 
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div key={step} {...slide} transition={{ duration: 0.25, ease: 'easeOut' }} className="space-y-4 sm:space-y-5">
-          {step === 'email' && (
-            <form
-              noValidate
-              className="space-y-4 sm:space-y-5"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void sendCode();
+      {step === 'email' && (
+        <form
+          noValidate
+          className="space-y-4 sm:space-y-5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void sendCode();
+          }}
+        >
+          <AuthItem>
+            <AuthField
+              id="rec-email"
+              label="Correo institucional"
+              icon={AtSign}
+              type="email"
+              autoComplete="email"
+              autoFocus
+              value={email}
+              onChange={(v) => {
+                setEmail(v);
+                setFieldError('');
               }}
-            >
-              <div className="space-y-1.5">
-                <label htmlFor="rec-email" className={authLabel}>
-                  Correo institucional
-                </label>
-                <div className="relative flex items-center">
-                  <span className="absolute left-3.5 text-slate-400 text-sm font-medium">@</span>
-                  <input
-                    id="rec-email"
-                    type="email"
-                    autoComplete="email"
-                    autoFocus
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      setFieldError('');
-                    }}
-                    aria-invalid={fieldError ? true : undefined}
-                    placeholder="nombre@universidad.edu.co"
-                    className={`${authInput} pl-9 pr-4 ${fieldError ? authInputError : ''}`}
-                  />
-                </div>
-                {fieldError && <p className="text-xs text-red-600">{fieldError}</p>}
-              </div>
-              <FormAlert message={error} />
-              <button type="submit" disabled={busy} className={authButton}>
-                {busy ? 'Enviando…' : 'Enviar código →'}
-              </button>
-            </form>
-          )}
+              placeholder="nombre@universidad.edu.co"
+              error={fieldError}
+            />
+          </AuthItem>
+          <AuthError message={error} />
+          <AuthItem>
+            <AuthSubmit state={busy ? 'loading' : 'idle'} label="Enviar código" loadingLabel="Enviando" />
+          </AuthItem>
+        </form>
+      )}
 
-          {step === 'code' && (
-            <form
-              noValidate
-              className="space-y-4 sm:space-y-5"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void verify();
+      {step === 'code' && (
+        <form
+          noValidate
+          className="space-y-4 sm:space-y-5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void verify();
+          }}
+        >
+          <AuthItem>
+            <div className="flex items-start gap-3 rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-sky-50 px-3 py-2.5 text-xs leading-relaxed text-slate-600">
+              <motion.span
+                className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-emerald-600 shadow-sm"
+                animate={reduceMotion ? undefined : { y: [0, -3, 0] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <MailCheck className="h-4 w-4" aria-hidden="true" />
+              </motion.span>
+              <span>
+                Si <span className="font-semibold text-slate-900 break-all">{email.trim()}</span> está registrado, te llegó un código. Revisa también la carpeta de spam.
+              </span>
+            </div>
+          </AuthItem>
+          <AuthItem className="space-y-1.5">
+            <p className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">Código de verificación</p>
+            <CodeInput
+              value={code}
+              autoFocus
+              invalid={Boolean(fieldError)}
+              onChange={(v) => {
+                setCode(v);
+                setFieldError('');
               }}
-            >
-              <p className="flex items-start gap-2 rounded-xl bg-[#F3F4F8] px-3 py-2.5 text-xs leading-relaxed text-slate-600">
-                <MailCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
-                <span>
-                  Si <span className="font-semibold text-slate-900 break-all">{email.trim()}</span> está registrado, te llegó un código. Revisa también la carpeta de spam.
-                </span>
-              </p>
-              <div className="space-y-1.5">
-                <p className={authLabel}>Código de verificación</p>
-                <CodeInput
-                  value={code}
-                  autoFocus
-                  invalid={Boolean(fieldError)}
-                  onChange={(v) => {
-                    setCode(v);
-                    setFieldError('');
-                  }}
-                  onComplete={(v) => void verify(v)}
-                />
-                {fieldError && <p className="text-xs text-red-600">{fieldError}</p>}
-              </div>
-              <FormAlert message={error} />
-              <FormAlert message={notice} tone="success" />
-              <button type="submit" disabled={busy || code.length !== CODE_LENGTH} className={authButton}>
-                {busy ? 'Verificando…' : 'Verificar código →'}
-              </button>
-              <div className="flex items-center justify-between text-xs">
-                <button type="button" onClick={() => go('email')} className={authLink}>
-                  Usar otro correo
-                </button>
-                <button type="button" onClick={() => void sendCode(true)} disabled={busy || cooldown > 0} className={`${authLink} disabled:font-semibold disabled:text-slate-400 disabled:no-underline`}>
-                  {cooldown > 0 ? `Reenviar en ${cooldown}s` : 'Reenviar código'}
-                </button>
-              </div>
-            </form>
-          )}
+              onComplete={(v) => void verify(v)}
+            />
+            <AnimatePresence initial={false}>
+              {fieldError && (
+                <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden text-xs text-red-600">
+                  {fieldError}
+                </motion.p>
+              )}
+            </AnimatePresence>
+          </AuthItem>
+          <AuthError message={error} />
+          <FormAlert message={notice} tone="success" />
+          <AuthItem>
+            <AuthSubmit state={busy ? 'loading' : 'idle'} disabled={code.length !== CODE_LENGTH} label="Verificar código" loadingLabel="Verificando" />
+          </AuthItem>
+          <AuthItem className="flex items-center justify-between text-xs">
+            <button type="button" onClick={() => go('email')} className={linkButton}>
+              Usar otro correo
+            </button>
+            <button type="button" onClick={() => void sendCode(true)} disabled={busy || cooldown > 0} className={`${linkButton} inline-flex items-center gap-1.5`}>
+              <RotateCw className={`h-3.5 w-3.5 ${cooldown > 0 ? '' : 'transition-transform duration-500 group-hover:rotate-180'}`} aria-hidden="true" />
+              {cooldown > 0 ? (
+                <span className="tabular-nums">Reenviar en {cooldown}s</span>
+              ) : (
+                'Reenviar código'
+              )}
+            </button>
+          </AuthItem>
+        </form>
+      )}
 
-          {step === 'password' && (
-            <form noValidate className="space-y-4" onSubmit={save}>
-              <PasswordField id="new-password" label="Nueva contraseña" value={password} autoFocus describedBy="password-requirements" onChange={(v) => { setPassword(v); setFieldError(''); }} />
-              <PasswordRequirements id="password-requirements" password={password} />
-              <PasswordField id="confirm-password" label="Confirmar contraseña" value={confirmation} onChange={(v) => { setConfirmation(v); setFieldError(''); }} />
-              {confirmation && confirmation === password && <p className="text-xs font-semibold text-emerald-700">✓ Las contraseñas coinciden</p>}
-              {fieldError && <p className="text-xs text-red-600">{fieldError}</p>}
-              <FormAlert message={error} />
-              <button type="submit" disabled={busy} className={authButton}>
-                {busy ? 'Guardando…' : 'Guardar contraseña →'}
-              </button>
-            </form>
-          )}
+      {step === 'password' && (
+        <form noValidate className="space-y-4" onSubmit={save}>
+          <AuthItem>
+            <PasswordField id="new-password" label="Nueva contraseña" value={password} autoFocus describedBy="password-requirements" onChange={(v) => { setPassword(v); setFieldError(''); }} />
+          </AuthItem>
+          <AuthItem>
+            <PasswordRequirements id="password-requirements" password={password} />
+          </AuthItem>
+          <AuthItem className="space-y-1.5">
+            <PasswordField id="confirm-password" label="Confirmar contraseña" value={confirmation} onChange={(v) => { setConfirmation(v); setFieldError(''); }} />
+            <AnimatePresence initial={false}>
+              {matches && (
+                <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="flex items-center gap-1 overflow-hidden text-xs font-semibold text-emerald-700">
+                  <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />
+                  Las contraseñas coinciden
+                </motion.p>
+              )}
+            </AnimatePresence>
+          </AuthItem>
+          <AuthError message={fieldError || error} />
+          <AuthItem>
+            <AuthSubmit state={busy ? 'loading' : 'idle'} label="Guardar contraseña" loadingLabel="Guardando" />
+          </AuthItem>
+        </form>
+      )}
 
-          {step === 'done' && (
-            <div className="flex flex-col items-center gap-3 py-4 text-center" role="status">
-              <motion.span initial={reduceMotion ? false : { scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 16 }} className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} aria-hidden="true">
-                  <motion.path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" initial={reduceMotion ? false : { pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.2, duration: 0.4 }} />
+      {step === 'done' && (
+        <AuthItem className="flex flex-col items-center gap-4 py-2 text-center">
+          <div role="status" className="flex flex-col items-center gap-3">
+            <span className="relative flex h-16 w-16 items-center justify-center">
+              {!reduceMotion && (
+                <motion.span className="absolute inset-0 rounded-full bg-emerald-400/30" initial={{ scale: 0.6, opacity: 0.8 }} animate={{ scale: 1.8, opacity: 0 }} transition={{ duration: 1.4, repeat: Infinity, ease: 'easeOut' }} aria-hidden="true" />
+              )}
+              <motion.span initial={reduceMotion ? false : { scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 15 }} className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-900/20">
+                <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} aria-hidden="true">
+                  <motion.path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" initial={reduceMotion ? false : { pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.25, duration: 0.45 }} />
                 </svg>
               </motion.span>
-              <p className="text-xs text-slate-500">Cerramos tus sesiones en otros equipos. Te llevamos al inicio de sesión…</p>
-              <Link href="/auth/login?restablecida=1" replace className={authButton}>
-                Iniciar sesión ahora
-              </Link>
-            </div>
-          )}
-        </motion.div>
-      </AnimatePresence>
+            </span>
+            <p className="text-xs text-slate-500">Cerramos tus sesiones en otros equipos. Te llevamos al inicio de sesión…</p>
+          </div>
+          <div className="h-1 w-full overflow-hidden rounded-full bg-slate-100" aria-hidden="true">
+            <motion.div className="h-full bg-gradient-to-r from-[#1CA3E9] to-[#35BE8B]" initial={{ width: '0%' }} animate={{ width: '100%' }} transition={{ duration: 2.5, ease: 'linear' }} />
+          </div>
+          <Link href="/auth/login?restablecida=1" replace className={authButton}>
+            Iniciar sesión ahora
+          </Link>
+        </AuthItem>
+      )}
     </AuthLayout>
   );
 }
