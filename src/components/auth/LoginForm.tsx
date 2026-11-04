@@ -83,14 +83,14 @@ export default function LoginForm() {
         />
       </AuthItem>
 
-      <AuthItem className="flex items-center justify-between text-xs pt-0.5 pb-1">
-        <label className="flex items-center gap-2 text-slate-600 cursor-pointer select-none">
-          <input type="checkbox" className="w-4 h-4 rounded border-slate-300 accent-[#111827] cursor-pointer" />
+      <AuthItem className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-xs">
+        <label className="flex cursor-pointer select-none items-center gap-2 whitespace-nowrap text-slate-600">
+          <input type="checkbox" className="h-4 w-4 cursor-pointer rounded border-slate-300 accent-[#0A65A8]" />
           Recordar en este equipo
         </label>
-        <Link href="/recuperar-password" className="group relative font-bold text-slate-900">
+        <Link href="/recuperar-password" className="group relative whitespace-nowrap font-semibold text-[#0A65A8]">
           ¿Olvidaste tu contraseña?
-          <span className="absolute -bottom-0.5 left-0 h-px w-full origin-left scale-x-0 bg-slate-900 transition-transform duration-300 group-hover:scale-x-100" aria-hidden="true" />
+          <span className="absolute -bottom-0.5 left-0 h-px w-full origin-left scale-x-0 bg-[#0A65A8] transition-transform duration-300 group-hover:scale-x-100" aria-hidden="true" />
         </Link>
       </AuthItem>
 

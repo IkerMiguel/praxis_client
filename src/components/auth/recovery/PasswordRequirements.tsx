@@ -19,7 +19,7 @@ export default function PasswordRequirements({ id, password }: { id: string; pas
   const level = STRENGTH[Math.max(passed.size - 1, 0)];
 
   return (
-    <div id={id} className="space-y-2.5 rounded-xl bg-[#F3F4F8] p-3">
+    <div id={id} className="space-y-2.5 rounded-xl border border-[#D7E2ED] bg-[#F7FAFC] p-3">
       <div className="flex items-center gap-2">
         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200">
           <motion.div

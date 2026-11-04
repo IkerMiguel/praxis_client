@@ -9,7 +9,7 @@ import { passwordRecoveryService } from '@/services/passwordRecoveryService';
 import { apiErrorMessage, apiFieldErrors, apiStatus } from '@/lib/apiError';
 import { meetsPolicy } from '@/lib/passwordPolicy';
 import AuthLayout from '../AuthLayout';
-import { AuthError, AuthField, AuthItem, AuthSubmit } from '../AuthMotion';
+import { AuthError, AuthField, AuthItem, AuthSubmit, authFieldLabel } from '../AuthMotion';
 import { authButton } from '../authStyles';
 import StepIndicator from './StepIndicator';
 import CodeInput from './CodeInput';
@@ -29,7 +29,7 @@ const COPY: Record<Step, { title: string; subtitle: string }> = {
   done: { title: 'Contraseña actualizada', subtitle: 'Ya puedes iniciar sesión con tu nueva clave' },
 };
 
-const linkButton = 'group relative font-bold text-slate-900 disabled:cursor-not-allowed disabled:font-semibold disabled:text-slate-400';
+const linkButton = 'group relative font-semibold text-[#0A65A8] hover:underline underline-offset-4 disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline';
 
 /** Restablecimiento por código numérico enviado al correo (HU-1.4). */
 export default function RequestRecoveryFlow() {
@@ -140,7 +140,7 @@ export default function RequestRecoveryFlow() {
       showcaseDescription="Te enviaremos un código de un solo uso. Al crear tu nueva contraseña cerraremos las sesiones abiertas en otros equipos."
       top={
         step !== 'done' && (
-          <Link href="/auth/login" className="group inline-flex items-center gap-1 text-xs font-semibold text-slate-500 transition-colors hover:text-slate-900">
+          <Link href="/auth/login" className="group inline-flex items-center gap-1 text-[13px] font-semibold text-slate-500 transition-colors hover:text-[#0B1B3A]">
             <ChevronLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" aria-hidden="true" />
             Volver al inicio de sesión
           </Link>
@@ -194,9 +194,9 @@ export default function RequestRecoveryFlow() {
           }}
         >
           <AuthItem>
-            <div className="flex items-start gap-3 rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-sky-50 px-3 py-2.5 text-xs leading-relaxed text-slate-600">
+            <div className="flex items-start gap-3 rounded-xl border border-[#D7E2ED] bg-[#F7FAFC] px-3 py-3 text-[13px] leading-relaxed text-slate-600">
               <motion.span
-                className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-emerald-600 shadow-sm"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0B1B3A] text-[#35BE8B]"
                 animate={reduceMotion ? undefined : { y: [0, -3, 0] }}
                 transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
               >
@@ -208,7 +208,7 @@ export default function RequestRecoveryFlow() {
             </div>
           </AuthItem>
           <AuthItem className="space-y-1.5">
-            <p className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">Código de verificación</p>
+            <p className={authFieldLabel}>Código de verificación</p>
             <CodeInput
               value={code}
               autoFocus
@@ -232,7 +232,7 @@ export default function RequestRecoveryFlow() {
           <AuthItem>
             <AuthSubmit state={busy ? 'loading' : 'idle'} disabled={code.length !== CODE_LENGTH} label="Verificar código" loadingLabel="Verificando" />
           </AuthItem>
-          <AuthItem className="flex items-center justify-between text-xs">
+          <AuthItem className="flex items-center justify-between text-[13px]">
             <button type="button" onClick={() => go('email')} className={linkButton}>
               Usar otro correo
             </button>

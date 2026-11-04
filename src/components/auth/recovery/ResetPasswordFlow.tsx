@@ -33,7 +33,7 @@ function Shell({ status, children }: { status: Status; children: React.ReactNode
       showcaseTitle="Recupera el acceso a tu cuenta institucional."
       showcaseDescription="Al crear tu nueva contraseña cerraremos las sesiones abiertas en otros equipos."
       top={
-        <Link href="/auth/login" className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-900">
+        <Link href="/auth/login" className="group inline-flex items-center gap-1 text-[13px] font-semibold text-slate-500 hover:text-[#0B1B3A]">
           <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
           Volver al inicio de sesión
         </Link>

@@ -74,14 +74,14 @@ export default function CodeInput({ value, onChange, length = 6, invalid = false
               if (e.key === 'ArrowLeft' && i > 0) refs.current[i - 1]?.focus();
               if (e.key === 'ArrowRight' && i < length - 1) refs.current[i + 1]?.focus();
             }}
-            className={`peer h-12 w-full rounded-xl border-2 text-center text-lg font-bold tabular-nums text-slate-900 transition-all duration-200 focus:-translate-y-0.5 focus:bg-white focus:shadow-[0_6px_16px_-6px_rgba(10,101,168,0.45)] focus:outline-none ${
-              invalid ? 'border-red-300 bg-red-50/50' : digit ? 'border-[#0A65A8]/40 bg-white' : 'border-transparent bg-[#EEF2F6] focus:border-[#1CA3E9]'
+            className={`h-14 w-full rounded-t-lg border-b-2 bg-white/60 text-center text-2xl font-bold tabular-nums text-[#0B1B3A] caret-[#0A65A8] transition-colors duration-200 focus:bg-[#EAF4FB] focus:outline-none ${
+              invalid ? 'border-red-400 bg-red-50/60' : digit ? 'border-[#0A65A8]' : 'border-[#C9D6E3] focus:border-[#1CA3E9]'
             }`}
           />
           {/* Barra inferior que se llena al escribir el dígito */}
           <motion.span
             aria-hidden="true"
-            className="pointer-events-none absolute inset-x-3 bottom-1.5 h-0.5 rounded-full bg-gradient-to-r from-[#1CA3E9] to-[#35BE8B]"
+            className="pointer-events-none absolute inset-x-0 -bottom-0 h-[2px] origin-left bg-gradient-to-r from-[#1CA3E9] to-[#35BE8B]"
             initial={false}
             animate={{ scaleX: digit && !invalid ? 1 : 0, opacity: digit && !invalid ? 1 : 0 }}
             transition={{ duration: 0.25 }}
