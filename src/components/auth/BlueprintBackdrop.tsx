@@ -67,7 +67,7 @@ export default function BlueprintBackdrop() {
           backgroundPosition: '-1px -1px',
         }}
       />
-      <svg className="absolute left-1/2 top-1/2 h-[min(92vh,820px)] w-auto -translate-x-1/2 -translate-y-1/2 opacity-80" viewBox="0 0 600 600" fill="none">
+      <svg className="absolute left-1/2 top-1/2 h-[min(92vh,820px)] w-auto -translate-x-1/2 -translate-y-1/2 opacity-60" viewBox="0 0 600 600" fill="none">
         {WALLS.map((d, i) => (
           <motion.path key={d} d={d} stroke="#7FA0C0" strokeWidth={3} strokeLinecap="square" {...draw(0.1 + i * 0.18, 1.1)} />
         ))}
@@ -107,6 +107,8 @@ export default function BlueprintBackdrop() {
           </g>
         ))}
       </svg>
+      {/* Velo suave para que el plano quede de fondo y no compita con el formulario */}
+      <div className="absolute inset-0 bg-[#F4F7FA]/25" />
       {/* Viñeta para que el plano se desvanezca hacia los bordes */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,#F4F7FA_95%)]" />
     </div>

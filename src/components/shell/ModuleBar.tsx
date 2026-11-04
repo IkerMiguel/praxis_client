@@ -166,7 +166,7 @@ export default function ModuleBar() {
             />
             <motion.div
               id="mega-menu"
-              className="absolute inset-x-0 top-full z-50 origin-top border-b border-praxis-line bg-white shadow-2xl shadow-slate-900/20"
+              className="absolute inset-x-0 top-full z-50 origin-top rounded-b-[28px] border-b-4 border-praxis-line bg-white shadow-2xl shadow-slate-900/20"
               initial={{ opacity: 0, scaleY: 0.96 }}
               animate={{ opacity: 1, scaleY: 1 }}
               exit={{ opacity: 0, scaleY: 0.96 }}
@@ -191,13 +191,18 @@ export default function ModuleBar() {
                             <Link
                               href={item.ruta}
                               onClick={() => setMegaOpen(false)}
-                              className={`flex items-start gap-3 rounded-xl px-3 py-2.5 transition ${active ? 'bg-sky-50' : 'hover:bg-slate-50'}`}
+                              aria-current={active ? 'page' : undefined}
+                              className={`flex gap-3 rounded-2xl px-3 transition-all duration-300 ${
+                                active
+                                  ? 'items-center bg-gradient-to-br from-sky-50 to-white py-5 shadow-md shadow-sky-900/10 ring-1 ring-sky-200'
+                                  : 'items-start py-2.5 hover:bg-slate-50'
+                              }`}
                             >
-                              <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${active ? 'bg-praxis-blue text-white' : 'bg-slate-100 text-slate-600'}`}>
-                                <Icon className="h-4 w-4" aria-hidden="true" />
+                              <span className={`flex shrink-0 items-center justify-center rounded-xl transition-all duration-300 ${active ? 'h-11 w-11 bg-praxis-blue text-white shadow-lg shadow-sky-900/25' : 'mt-0.5 h-8 w-8 bg-slate-100 text-slate-600'}`}>
+                                <Icon className={active ? 'h-5 w-5' : 'h-4 w-4'} aria-hidden="true" />
                               </span>
                               <span className="min-w-0">
-                                <span className={`flex items-center gap-1.5 text-sm font-semibold ${active ? 'text-sky-900' : 'text-slate-800'}`}>
+                                <span className={`flex items-center gap-1.5 font-semibold ${active ? 'text-base text-sky-900' : 'text-sm text-slate-800'}`}>
                                   {item.etiqueta}
                                   {item.solo_lectura && <Eye className="h-3.5 w-3.5 text-slate-400" aria-label="Solo lectura" />}
                                 </span>
