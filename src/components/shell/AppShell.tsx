@@ -33,7 +33,8 @@ function ConnectionChip() {
 function TopBar() {
   const { profile } = useSession();
   return (
-    <div className="border-b border-praxis-line bg-white">
+    // z-50: queda por encima del velo del menú de módulos para que la barra superior no se difumine.
+    <div className="relative z-50 border-b border-praxis-line bg-white">
       <div className="mx-auto flex max-w-[1440px] items-center gap-3 px-4 py-3 sm:gap-5 sm:px-6 lg:px-8">
         <Link href={profile?.ruta_inicio ?? '/panel'} className="flex shrink-0 items-center gap-3" aria-label="PRAXIS, ir al inicio">
           {/* eslint-disable-next-line @next/next/no-img-element */}

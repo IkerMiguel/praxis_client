@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'motion/react';
@@ -27,6 +27,7 @@ export default function ModuleBar() {
   const reduceMotion = useReducedMotion();
   const { menu } = useSession();
   const [megaOpen, setMegaOpen] = useState(false);
+  const barRef = useRef<HTMLDivElement>(null);
   const [tip, setTip] = useState<{ label: string; x: number; y: number } | null>(null);
 
   const showTip = (label: string, target: HTMLElement) => {
@@ -47,14 +48,22 @@ export default function ModuleBar() {
   useEffect(() => {
     if (!megaOpen) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setMegaOpen(false);
+    // La barra superior queda por encima del velo, así que un clic allí también debe cerrar el menú.
+    const onPointer = (e: PointerEvent) => {
+      if (barRef.current && !barRef.current.contains(e.target as Node)) setMegaOpen(false);
+    };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onPointer);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onPointer);
+    };
   }, [megaOpen]);
 
   const spring = reduceMotion ? { duration: 0 } : { type: 'spring' as const, stiffness: 420, damping: 34 };
 
   return (
-    <div className="relative border-b border-praxis-line">
+    <div ref={barRef} className="relative border-b border-praxis-line">
       {/* Fondo de la barra en su propia capa: si el desenfoque estuviera en el contenedor, el velo fijo quedaría atrapado dentro de la barra */}
       <div className="absolute inset-0 z-50 bg-praxis-surface/80 backdrop-blur" aria-hidden="true" />
       <nav aria-label="Módulos" className="relative z-50 mx-auto flex max-w-[1440px] items-center gap-2 px-4 py-2.5 sm:px-6 lg:px-8">
@@ -194,7 +203,7 @@ export default function ModuleBar() {
                               aria-current={active ? 'page' : undefined}
                               className={`flex gap-3 rounded-2xl px-3 transition-all duration-300 ${
                                 active
-                                  ? 'items-center bg-gradient-to-br from-sky-50 to-white py-5 shadow-md shadow-sky-900/10 ring-1 ring-sky-200'
+                                  ? 'min-h-[150px] items-center bg-gradient-to-br from-sky-50 to-white py-6 shadow-md shadow-sky-900/10 ring-1 ring-sky-200'
                                   : 'items-start py-2.5 hover:bg-slate-50'
                               }`}
                             >
