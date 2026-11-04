@@ -7,7 +7,7 @@ import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'motion/r
 import { ArrowRight, CircleHelp, Eye, LayoutGrid, Phone, X } from 'lucide-react';
 import { useSession } from '@/lib/session/SessionProvider';
 import type { MenuItem } from '@/types/auth';
-import { MODULE_HINTS, moduleIcon } from './ModuleIcon';
+import { MODULE_DETAILS, MODULE_HINTS, moduleIcon } from './ModuleIcon';
 
 /** Ítem del menú cuya ruta coincide mejor con la URL actual (prefijo más largo). */
 export function activeModule(menu: MenuItem[], pathname: string): MenuItem | undefined {
@@ -203,7 +203,7 @@ export default function ModuleBar() {
                               aria-current={active ? 'page' : undefined}
                               className={`flex gap-3 rounded-2xl px-3 transition-all duration-300 ${
                                 active
-                                  ? 'min-h-[150px] items-center bg-gradient-to-br from-sky-50 to-white py-6 shadow-md shadow-sky-900/10 ring-1 ring-sky-200'
+                                  ? 'min-h-[150px] items-start bg-gradient-to-br from-sky-50 to-white py-6 shadow-md shadow-sky-900/10 ring-1 ring-sky-200'
                                   : 'items-start py-2.5 hover:bg-slate-50'
                               }`}
                             >
@@ -215,7 +215,11 @@ export default function ModuleBar() {
                                   {item.etiqueta}
                                   {item.solo_lectura && <Eye className="h-3.5 w-3.5 text-slate-400" aria-label="Solo lectura" />}
                                 </span>
-                                <span className="block text-xs text-slate-500">{MODULE_HINTS[item.codigo] ?? ''}</span>
+                                {active && MODULE_DETAILS[item.codigo] ? (
+                                  <span className="mt-1 block text-[13px] leading-relaxed text-slate-600">{MODULE_DETAILS[item.codigo]}</span>
+                                ) : (
+                                  <span className="block text-xs text-slate-500">{MODULE_HINTS[item.codigo] ?? ''}</span>
+                                )}
                               </span>
                             </Link>
                           </li>
