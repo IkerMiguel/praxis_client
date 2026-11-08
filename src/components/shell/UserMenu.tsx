@@ -7,6 +7,7 @@ import Popover from '@/components/ui/Popover';
 import FullscreenLoader from '@/components/ui/FullscreenLoader';
 import RoleSwitcher from '@/components/auth/RoleSwitcher';
 import { useSession } from '@/lib/session/SessionProvider';
+import { confirmAction } from '@/components/ui/ConfirmDialog';
 import { initials } from '@/lib/format';
 
 export default function UserMenu() {
@@ -17,6 +18,15 @@ export default function UserMenu() {
   if (!profile) return null;
 
   const logout = async () => {
+    setOpen(false);
+    const ok = await confirmAction({
+      tone: 'primary',
+      icon: 'logout',
+      title: '¿Cerrar sesión?',
+      description: 'Tendrás que volver a ingresar con tu correo institucional para seguir usando PRAXIS.',
+      confirmLabel: 'Cerrar sesión',
+    });
+    if (!ok) return;
     setLeaving(true);
     await signOut().catch(() => undefined);
   };

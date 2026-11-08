@@ -78,7 +78,7 @@ export default function TriageInboxView() {
             <h2 className="font-bold text-slate-900">{stats.find((s) => s.key === bucket)?.label ?? 'Todas las solicitudes en triaje'}</h2>
             <p className="text-xs text-slate-500">{list.data ? `${list.data.meta.total} solicitudes` : 'Cargando…'}</p>
           </div>
-          <form
+          <form noValidate
             className="relative sm:ml-auto sm:w-80"
             role="search"
             onSubmit={(e) => {

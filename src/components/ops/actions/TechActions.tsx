@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 import { ClipboardPen, Hammer, Minus, Plus, ScanSearch, SearchX, Timer, Trash2 } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import EvidenceUploader from '@/components/ui/EvidenceUploader';
+import { confirmAction } from '@/components/ui/ConfirmDialog';
 import { opsService } from '@/services/opsService';
 import type { Evidencia } from '@/services/evidenceService';
 import { ActionButton, ActionGroup, FormError, TextArea, useSubmit, type ActionContext } from './ActionKit';
@@ -33,17 +34,19 @@ export default function TechActions(ctx: ActionContext) {
 
   if (!allowed || !['E06', 'E07', 'E10', 'E11'].includes(code)) return null;
 
-  const begin = (fn: () => Promise<unknown>, message: string, after?: () => void) =>
-    start.run(fn).then((ok) => {
+  const begin = async (fn: () => Promise<unknown>, message: string, after?: () => void, ask?: { title: string; description: string; confirmLabel: string }) => {
+    if (ask && !(await confirmAction({ tone: 'primary', icon: 'question', subject: inc.codigo_ticket, ...ask }))) return;
+    return start.run(fn).then((ok) => {
       if (ok) {
         after?.();
         onDone(message);
       }
     });
+  };
 
   return (
     <ActionGroup title="Técnico en sitio">
-      {code === 'E06' && <ActionButton icon={ScanSearch} tone="primary" label="Iniciar inspección" hint="Registra tu llegada al sitio" disabled={start.busy} onClick={() => begin(() => opsService.iniciarInspeccion(inc.id), 'Inspección iniciada.')} />}
+      {code === 'E06' && <ActionButton icon={ScanSearch} tone="primary" label="Iniciar inspección" hint="Registra tu llegada al sitio" disabled={start.busy} onClick={() => begin(() => opsService.iniciarInspeccion(inc.id), 'Inspección iniciada.', undefined, { title: '¿Iniciar la inspección?', description: 'Quedará registrada tu llegada al sitio con la hora actual.', confirmLabel: 'Iniciar inspección' })} />}
       {code === 'E07' && !pendingDecision && (
         <>
           <ActionButton icon={ClipboardPen} tone="primary" label="Registrar diagnóstico" hint="Daño confirmado e intervención propuesta" onClick={() => setDialog('diagnostico')} />
@@ -65,7 +68,7 @@ export default function TechActions(ctx: ActionContext) {
               } catch {
                 // Sin almacenamiento: el tiempo se ingresa a mano.
               }
-            })
+            }, { title: '¿Iniciar la atención?', description: 'El cronómetro empieza a contar el tiempo de la intervención desde este momento.', confirmLabel: 'Iniciar atención' })
           }
         />
       )}

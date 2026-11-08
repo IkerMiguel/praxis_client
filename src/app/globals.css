@@ -81,6 +81,16 @@ body {
   }
 }
 
+/* Barra de tiempo restante de los avisos (Toaster) */
+@keyframes praxis-toast-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
 /* Impresión del comprobante de radicación: solo se imprime el ticket. */
 .praxis-print-root {
   display: none;

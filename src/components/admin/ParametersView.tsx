@@ -6,6 +6,7 @@ import { History, Minus, Plus, RotateCcw, Save, SlidersHorizontal } from 'lucide
 import PageHeader from '@/components/ui/PageHeader';
 import { QueryBoundary } from '@/components/ui/States';
 import StatusTimeline from '@/components/ui/StatusTimeline';
+import { confirmAction } from '@/components/ui/ConfirmDialog';
 import { toast } from '@/components/ui/Toaster';
 import { adminService, type Parametros } from '@/services/adminService';
 import { useApiQuery } from '@/lib/useApiQuery';
@@ -81,6 +82,14 @@ function Editor({ initial, readOnly, onSaved }: { initial: Parametros; readOnly:
   };
 
   const save = async () => {
+    const ok = await confirmAction({
+      tone: 'warning',
+      icon: 'shield',
+      title: '¿Aplicar los cambios a todo el sistema?',
+      description: 'La nueva configuración se usa de inmediato para clasificar y medir los plazos de las incidencias que se registren desde ahora.',
+      confirmLabel: 'Guardar y aplicar',
+    });
+    if (!ok) return;
     setSaving(true);
     try {
       await adminService.updateParameters({
@@ -88,7 +97,7 @@ function Editor({ initial, readOnly, onSaved }: { initial: Parametros; readOnly:
         sla: slaDirty ? sla.map(({ codigo, horas_primera_respuesta, horas_resolucion }) => ({ codigo, horas_primera_respuesta, horas_resolucion })) : undefined,
         parametros: changedParams.length ? Object.fromEntries(changedParams.map((p) => [p.clave, params[p.clave]])) : undefined,
       });
-      toast('Configuración guardada y aplicada.');
+      toast('La matriz de prioridad, los plazos y los parámetros ya están vigentes.', 'success', 'Configuración aplicada');
       onSaved();
     } catch (err) {
       toast(apiErrorMessage(err, 'No se pudo guardar la configuración.'), 'error');

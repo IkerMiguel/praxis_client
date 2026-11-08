@@ -6,6 +6,7 @@ import { Building, ChevronRight, DoorOpen, Layers, MapPinned, Pencil, Plus, Powe
 import PageHeader from '@/components/ui/PageHeader';
 import Modal from '@/components/ui/Modal';
 import { QueryBoundary } from '@/components/ui/States';
+import { confirmAction } from '@/components/ui/ConfirmDialog';
 import { toast } from '@/components/ui/Toaster';
 import { FormError, useSubmit } from '@/components/ops/actions/ActionKit';
 import { adminService, type NivelUbicacion } from '@/services/adminService';
@@ -54,6 +55,19 @@ export default function LocationsView() {
   const sedes = (tree.data ?? []) as unknown as TreeNode[];
 
   const toggle = async (level: NivelUbicacion, node: TreeNode) => {
+    const ok = await confirmAction(
+      node.activo
+        ? {
+            tone: 'warning',
+            icon: 'power',
+            title: `¿Inactivar ${LEVELS[level].label.toLowerCase()}?`,
+            subject: node.nombre,
+            description: 'Dejará de aparecer al radicar reportes. Las incidencias que ya tiene no cambian y puedes activarla de nuevo cuando quieras.',
+            confirmLabel: 'Inactivar',
+          }
+        : { tone: 'primary', icon: 'power', title: `¿Activar ${LEVELS[level].label.toLowerCase()}?`, subject: node.nombre, description: 'Volverá a estar disponible al radicar reportes.', confirmLabel: 'Activar' },
+    );
+    if (!ok) return;
     try {
       await adminService.setLocationState(level, node.id, !node.activo);
       toast(node.activo ? `${LEVELS[level].label} inactivada: deja de aparecer al radicar.` : `${LEVELS[level].label} activada.`);
@@ -63,10 +77,18 @@ export default function LocationsView() {
     }
   };
   const remove = async (level: NivelUbicacion, node: TreeNode) => {
-    if (!window.confirm(`¿Eliminar ${LEVELS[level].label.toLowerCase()} “${node.nombre}”? Solo es posible si no tiene incidencias ni niveles dependientes.`)) return;
+    const ok = await confirmAction({
+      tone: 'danger',
+      icon: 'delete',
+      title: `¿Eliminar ${LEVELS[level].label.toLowerCase()}?`,
+      subject: node.nombre,
+      description: 'Esta acción no se puede deshacer. Solo es posible si no tiene incidencias ni niveles dependientes.',
+      confirmLabel: 'Eliminar',
+    });
+    if (!ok) return;
     try {
       await adminService.deleteLocation(level, node.id);
-      toast('Ubicación eliminada.');
+      toast(`${node.nombre} se eliminó del catálogo de ubicaciones.`, 'success', 'Ubicación eliminada');
       void tree.reload();
     } catch (err) {
       toast(apiErrorMessage(err, 'No se pudo eliminar.'), 'error');

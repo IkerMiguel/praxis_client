@@ -4,9 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
-import { Check, CircleAlert, Info, MapPin, Send, ShieldAlert, Siren } from 'lucide-react';
+import { Check, CircleAlert, Info, MapPin, Send, ShieldAlert, Siren, Trash2 } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import Modal from '@/components/ui/Modal';
+import { confirmAction } from '@/components/ui/ConfirmDialog';
+import { toast } from '@/components/ui/Toaster';
 import EvidenceUploader from '@/components/ui/EvidenceUploader';
 import { QueryBoundary } from '@/components/ui/States';
 import FullscreenLoader from '@/components/ui/FullscreenLoader';
@@ -215,6 +217,29 @@ function ReportFormBody({ sedes, categorias }: { sedes: Sede[]; categorias: Cate
       />
     );
   }
+
+  const hasDraft = Boolean(form.sedeId || form.categoriaId || form.resumen.trim() || form.descripcion.trim() || form.riesgo || evidencias.length);
+
+  /** Limpia el formulario y el borrador guardado, previa confirmación (KAN-157). */
+  const discardDraft = async () => {
+    const ok = await confirmAction({
+      tone: 'danger',
+      icon: 'delete',
+      title: '¿Descartar este borrador?',
+      description: 'Se borran la ubicación, la descripción y las fotos que llevas. Esta acción no se puede deshacer.',
+      confirmLabel: 'Descartar',
+    });
+    if (!ok) return;
+    setForm(EMPTY);
+    setEvidencias([]);
+    setDiferente(false);
+    setErrors({});
+    setFormError('');
+    saveDraft(null);
+    idempotencyKey.current = null;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    toast('Puedes empezar un reporte nuevo desde cero.', 'info', 'Borrador descartado');
+  };
 
   const selectClass = (key: string) => `field h-12 appearance-none pr-10 ${errors[key] ? 'border-red-300 ring-4 ring-red-50' : ''}`;
 
@@ -495,7 +520,14 @@ function ReportFormBody({ sedes, categorias }: { sedes: Sede[]; categorias: Cate
                 {uploading ? 'Esperando la carga de fotos…' : 'Revisar y enviar reporte'}
                 <Send className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
               </motion.button>
-              <span className="text-xs text-slate-400 sm:ml-auto">Borrador guardado en este equipo</span>
+              {hasDraft ? (
+                <button type="button" onClick={discardDraft} className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition hover:text-red-600 sm:ml-auto">
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  Descartar borrador
+                </button>
+              ) : (
+                <span className="text-xs text-slate-400 sm:ml-auto">El borrador se guarda en este equipo</span>
+              )}
             </div>
           </div>
         </form>

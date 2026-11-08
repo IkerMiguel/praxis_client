@@ -13,6 +13,7 @@ import ModuleBar from './ModuleBar';
 import NotificationBell from './NotificationBell';
 import UserMenu from './UserMenu';
 import Toaster from '@/components/ui/Toaster';
+import ConfirmHost from '@/components/ui/ConfirmDialog';
 
 function ConnectionChip() {
   const online = useOnline();
@@ -100,6 +101,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           {children}
         </motion.main>
         <Toaster />
+        <ConfirmHost />
       </div>
     </AuthGuard>
   );

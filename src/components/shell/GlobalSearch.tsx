@@ -33,7 +33,7 @@ export default function GlobalSearch() {
   };
 
   return (
-    <form onSubmit={submit} role="search" className="relative w-full">
+    <form noValidate onSubmit={submit} role="search" className="relative w-full">
       <Search className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400" aria-hidden="true" />
       <label htmlFor="global-search" className="sr-only">
         Buscar por radicado o descripción

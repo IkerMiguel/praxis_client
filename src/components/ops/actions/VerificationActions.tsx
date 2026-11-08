@@ -137,7 +137,7 @@ function QualityReview({ open, onClose, ctx }: { open: boolean; onClose: () => v
                 </li>
               ))}
             </ul>
-            <form
+            <form noValidate
               className="mt-2 flex gap-2"
               onSubmit={(e) => {
                 e.preventDefault();
