@@ -28,7 +28,7 @@ Copia `.env.example` → `.env` (no se sube a Git).
 | `NEXT_PUBLIC_API_URL` | URL del backend externo |
 | `PLAYWRIGHT_BASE_URL` | Base URL para e2e (local/CI) |
 
-- **Local:** valores en `.env` (p. ej. `http://localhost:3000` / `http://localhost:8080`)
+- **Local:** valores en `.env` (p. ej. `http://localhost:3000` / `http://localhost:8000`)
 - **Producción:** mismas keys en Vercel → Settings → Environment Variables, luego Redeploy
 
 En código:
